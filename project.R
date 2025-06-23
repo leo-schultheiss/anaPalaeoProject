@@ -237,7 +237,8 @@ allAbund = as.numeric(allSampStg$occs)
 relAbund = omniAbund / allAbund
 
 # attach names of stages using join(/merge)
-sampling <- merge(stages, omniSampStg, by="stg")
+omni <- merge(stages, omniSampStg, by="stg")
+all = merge(stages, allSampStg, by="stg")
 #str(sampling)
 
 tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
@@ -248,3 +249,9 @@ lines(sampling$mid, relAbund, lwd=2)
 legend("topleft", bg="white", legend=c("occurrences", "collections"), 
        col=c("black", "blue"), lwd=2, inset=c(0.05,0.01), cex=1.3)
 title("Relative number of occurences of omnivores")
+
+
+# plot extinction rates
+tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,2000), ylab="Extinction Rates")
+lines(omni$mid, omni$occs)
+lines(omni$mid, omni$u, col="blue")
