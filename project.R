@@ -221,7 +221,22 @@ load(url("https://github.com/divDyn/ddPhanero/raw/master/data/Stratigraphy/2018-
 # correct it with this function
 source("https://github.com/divDyn/ddPhanero/raw/master/scripts/strat/2019-05-31/ordProcess.R")
 
-table(dat$stg)
-
-
 ##### DONE with preprocessing ########
+
+sampStg<- binstat(dat, bin="stg", tax="clgen", coll="collection_no", 
+                  duplicates=FALSE)  
+
+str(sampStg)
+
+# attach names of stages using join(/merge)
+sampling <- merge(stages, sampStg, by="stg")
+str(sampling)
+
+tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,20000), 
+       ylab="Number of Records")
+# occurrences
+lines(sampling$mid, sampling$occs, lwd=2)
+# collections
+lines(sampling$mid, sampling$colls, lwd=2, col="blue")
+legend("topleft", bg="white", legend=c("occurrences", "collections"), 
+       col=c("black", "blue"), lwd=2, inset=c(0.05,0.01), cex=1.3)
