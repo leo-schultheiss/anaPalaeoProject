@@ -231,27 +231,18 @@ omniSampStg<- binstat(omnivores, bin="stg", tax="clgen", coll="collection_no",
                   duplicates=FALSE)  
 allSampStg = binstat(dat, bin="stg", tax="clgen", coll="collection_no", duplicates=FALSE)
 
+omniDiv = divDyn(omnivores ,bin="stg", tax="clgen")
+omniDivStg = merge(stages, omniDiv, by="stg")
+allDiv = divDyn(dat, bin="stg", tax="clgen")
+allDivStg = merge(stages, allDiv, by="stg")
 
-omniAbund = as.numeric(omniSampStg$occs)
-allAbund = as.numeric(allSampStg$occs)
-relAbund = omniAbund / allAbund
-
-# attach names of stages using join(/merge)
-omni <- merge(stages, omniSampStg, by="stg")
-all = merge(stages, allSampStg, by="stg")
-#str(sampling)
-
+# relative extinction rates
 tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
-       ylab="Relative Number of Omnivores")
-# occurrences
-lines(sampling$mid, relAbund, lwd=2)
+       ylab="Extinction Proportion")
+lines(omniDivStg$mid, omniDivStg$extProp, col="red")
+lines(allDivStg$mid, allDivStg$extProp)
 
-legend("topleft", bg="white", legend=c("occurrences", "collections"), 
-       col=c("black", "blue"), lwd=2, inset=c(0.05,0.01), cex=1.3)
-title("Relative number of occurences of omnivores")
+cor.test(omniDivStg$extProp, allDivStg$extProp)
 
+# absolute extinctions
 
-# plot extinction rates
-tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,2000), ylab="Extinction Rates")
-lines(omni$mid, omni$occs)
-lines(omni$mid, omni$u, col="blue")
