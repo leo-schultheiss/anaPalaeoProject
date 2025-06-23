@@ -223,20 +223,28 @@ source("https://github.com/divDyn/ddPhanero/raw/master/scripts/strat/2019-05-31/
 
 ##### DONE with preprocessing ########
 
-sampStg<- binstat(dat, bin="stg", tax="clgen", coll="collection_no", 
-                  duplicates=FALSE)  
+omnivores = dat[grepl('omnivore', dat$diet, fixed=TRUE),]
+nrow(omnivores)
 
-str(sampStg)
+
+omniSampStg<- binstat(omnivores, bin="stg", tax="clgen", coll="collection_no", 
+                  duplicates=FALSE)  
+allSampStg = binstat(dat, bin="stg", tax="clgen", coll="collection_no", duplicates=FALSE)
+
+
+omniAbund = as.numeric(omniSampStg$occs)
+allAbund = as.numeric(allSampStg$occs)
+relAbund = omniAbund / allAbund
 
 # attach names of stages using join(/merge)
-sampling <- merge(stages, sampStg, by="stg")
-str(sampling)
+sampling <- merge(stages, omniSampStg, by="stg")
+#str(sampling)
 
-tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,20000), 
-       ylab="Number of Records")
+tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
+       ylab="Relative Number of Omnivores")
 # occurrences
-lines(sampling$mid, sampling$occs, lwd=2)
-# collections
-lines(sampling$mid, sampling$colls, lwd=2, col="blue")
+lines(sampling$mid, relAbund, lwd=2)
+
 legend("topleft", bg="white", legend=c("occurrences", "collections"), 
        col=c("black", "blue"), lwd=2, inset=c(0.05,0.01), cex=1.3)
+title("Relative number of occurences of omnivores")
