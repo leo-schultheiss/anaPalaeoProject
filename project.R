@@ -244,5 +244,9 @@ lines(allDivStg$mid, allDivStg$extProp)
 
 cor.test(omniDivStg$extProp, allDivStg$extProp)
 
-# absolute extinctions
+# plot difference of relative extinction rates
+tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(-1,1), 
+       ylab="Omni Extinctions Prop - All Extinction Prop")
 
+lines(omniDivStg$mid, omniDivStg$extProp- allDivStg$extProp)
+abline(h=0)
