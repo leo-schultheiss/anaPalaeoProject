@@ -225,28 +225,40 @@ source("https://github.com/divDyn/ddPhanero/raw/master/scripts/strat/2019-05-31/
 
 omnivores = dat[grepl('omnivore', dat$diet, fixed=TRUE),]
 nrow(omnivores)
+pure_omnivores = dat[dat$diet == 'omnivore',]
+nrow(pure_omnivores)
 
 
-omniSampStg<- binstat(omnivores, bin="stg", tax="clgen", coll="collection_no", 
-                  duplicates=FALSE)  
-allSampStg = binstat(dat, bin="stg", tax="clgen", coll="collection_no", duplicates=FALSE)
+#omniSampStg<- binstat(omnivores, bin="stg", tax="clgen", coll="collection_no", 
+#                  duplicates=FALSE)  
+#pure_omni_samp_stg = binstat(pure_omnivores, bin="stg", tax="clgen", coll="collection_no", 
+#                             duplicates=FALSE)
+#allSampStg = binstat(dat, bin="stg", tax="clgen", coll="collection_no", duplicates=FALSE)
 
 omniDiv = divDyn(omnivores ,bin="stg", tax="clgen")
 omniDivStg = merge(stages, omniDiv, by="stg")
+pureOmniDiv = divDyn(pure_omnivores, bin ="stg", tax="clgen")
+pureOmniDivStg = merge(stages, pureOmniDiv, bin="stg", tax="clgen")
 allDiv = divDyn(dat, bin="stg", tax="clgen")
 allDivStg = merge(stages, allDiv, by="stg")
 
 # relative extinction rates
-tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
-       ylab="Extinction Proportion")
-lines(omniDivStg$mid, omniDivStg$extProp, col="red")
-lines(allDivStg$mid, allDivStg$extProp)
-
-cor.test(omniDivStg$extProp, allDivStg$extProp)
+# tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
+#       ylab="Extinction Proportion")
+#lines(omniDivStg$mid, omniDivStg$extProp, col="red")
+#lines(allDivStg$mid, allDivStg$extProp)
 
 # plot difference of relative extinction rates
-tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(-1,1), 
-       ylab="Omni Extinctions Prop - All Extinction Prop")
+tsplot(stages, boxes="sys", shading="sys", xlim=15:95, ylim=c(-0.5,0.5), 
+       ylab="Difference between Population Ext. and Omni Ext.")
 
-lines(omniDivStg$mid, omniDivStg$extProp- allDivStg$extProp)
+lines(omniDivStg$mid, omniDivStg$extProp- allDivStg$extProp, col="red")
+lines(pureOmniDivStg$mid, pureOmniDivStg$extProp - allDivStg$extProp, col="blue")
 abline(h=0)
+# add extinction events
+abline(v=66)
+abline(v=201)
+abline(v=252)
+abline(v=372)
+abline(v=445)
+
