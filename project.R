@@ -227,6 +227,8 @@ par(mar=c(4,12,3,3))
 barplot(sort(table(dat$diet), decreasing = TRUE),las=2,horiz = TRUE, )
 
 carnivores = dat[dat$diet == 'carnivore',]
+predators = carnivores
+nonpredators = dat[dat$diet != 'carnivore',]
 herbivores = dat[dat$diet == 'herbivore' | dat$diet =='grazer', ]
 other = dat[dat$diet != 'carnivore' & dat$diet != 'herbivore' & dat$diet != 'grazer',]
 
@@ -236,62 +238,75 @@ par(mar=c(4,11,4,4))
 barplot(sort(table(carnivores$phylum), decreasing = TRUE),las=2,horiz = TRUE)
 barplot(sort(table(herbivores$phylum), decreasing = TRUE),las=2,horiz = TRUE)
 barplot(sort(table(other$phylum), decreasing = TRUE),las=2,horiz = TRUE)
+par()
 
 
 # analyze diversity dynamics of omnivores and others
-allDiv = merge(stages, divDyn(dat, bin="stg", tax="clgen"), by="stg")
-carniDiv = merge(stages, divDyn(carnivores, bin = "stg", tax="clgen"), by="stg")
-herbiDiv = merge(stages, divDyn(herbivores, bin ="stg", tax="clgen"), by="stg")
-otherDiv = merge(stages, divDyn(other, bin ="stg", tax="clgen"), by="stg")
+divStg = function(x) {
+  merge(stages, divDyn(x, bin="stg", tax="clgen"), by="stg")
+}
+
+allDiv = divStg(dat)
+carniDiv = divStg(carnivores)
+predatorDiv = carniDiv
+nonPredDiv = divStg(nonpredators)
+herbiDiv = divStg(herbivores)
+otherDiv = divStg(other)
+
+full_tsplot <- function(x, ys, cols=c("red", "green", "black"), labels=c("carnivores", "herbivores", "other"),
+                           xlim = 4:95, ylim = c(0, 1),
+                           ylab = "Diversity Proportion",
+                           boxes = "sys", shading = "sys",
+                           event_lines = c(66, 201, 252, 372, 445),
+                           legend_pos = "topleft", legend_inset = c(0.05, 0.01),
+                           legend_cex = 1.3,
+                           tit="Diversity") {
+  # Plot the tsplot background
+  tsplot(stages, boxes = boxes, shading = shading, xlim = xlim, ylim = ylim,
+         ylab = ylab)
+  
+  # Add the lines
+  for (i in seq_along(ys)) {
+    lines(x, ys[[i]], col = cols[i], lwd = 2)
+  }
+  
+  # Add vertical event lines
+  abline(v = event_lines, col = "gray40", lty = 2)
+  
+  # add horizontal line
+  abline(h=0)
+  
+  
+  # Add legend
+  legend(legend_pos, bg = "white", legend = labels,
+         col = cols, lwd = 2, inset = legend_inset, cex = legend_cex)
+  
+  # Add title
+  title(tit)
+}
+
 
 # relative extinction rates
-tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
-       ylab="Extinction Proportion")
-lines(allDiv$mid, otherDiv$extProp, col="black")
-lines(allDiv$mid, carniDiv$extProp, col="red")
-lines(allDiv$mid, herbiDiv$extProp, col="green")
-abline(v=66)
-abline(v=201)
-abline(v=252)
-abline(v=372)
-abline(v=445)
-legend("topleft", bg="white", legend=c("carnivores", "herbivores" ,"other"), 
-       col=c("red", "green","black"), lwd=2, inset=c(0.05,0.01), cex=1.3)
+full_tsplot(x=allDiv$mid, ys=list(carniDiv$extProp, herbiDiv$extProp, otherDiv$extProp), 
+            tit="Proportional Extinctions",
+            ylab="Proportion")
+
+
+# diversity rates
+full_tsplot(x=allDiv$mid, ys=list(carniDiv$divSIB, herbiDiv$divSIB, otherDiv$divSIB), 
+            tit="SIB Diversity",
+            ylab="Diversity",
+            ylim=c(0, max(carniDiv$divSIB, herbiDiv$divSIB, otherDiv$divSIB, na.rm = TRUE)))
 
 # zscored extinction rates (raw data, foote metric, since biases don't matter for this analysis)
 zscore = function(x) {
   return (x - mean(x, na.rm=TRUE)) / sd(x, na.rm=TRUE)
 }
-allExtZscore = zscore(allDiv$extPC)
 carniExtZscore = zscore(carniDiv$extPC)
-herbiExtZscore = zscore(herbiDiv$extPC)
-otherExtZscore = zscore(otherDiv$extPC)
-tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(-2,2), 
-       ylab="Z-Scored Extinction PC")
-lines(allDiv$mid, allExtZscore, col="black")
-lines(allDiv$mid, carniExtZscore, col="red")
-lines(allDiv$mid, herbiExtZscore, col="green")
-abline(h=0)
-abline(v=66)
-abline(v=201)
-abline(v=252)
-abline(v=372)
-abline(v=445)
-legend("topleft", bg="white", legend=c("carnivores", "herbivores" ,"other"), 
-       col=c("red", "green","black"), lwd=2, inset=c(0.05,0.01), cex=1.3)
+nonPredExtZscore = zscore(nonPredDiv$extPC)
+
+full_tsplot(allDiv$mid, ys=list(carniExtZscore, otherExtZscore), ylim=c(-2, 2), tit="Z-Scored Extinction Foote Metric", cols=c("red", "black"), labels=c("Predators", "Other"))
 
 # difference between zscores
-carniExtDiffZscore = otherExtZscore - carniExtZscore
-herbiExtDiffZscore = otherExtZscore - herbiExtZscore
-tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(-1,1), 
-       ylab="Difference of Z-Scored Extinction PC")
-lines(allDiv$mid, carniExtDiffZscore, col="red")
-lines(allDiv$mid, herbiExtDiffZscore, col="green")
-abline(h=0)
-abline(v=66)
-abline(v=201)
-abline(v=252)
-abline(v=372)
-abline(v=445)
-legend("topleft", bg="white", legend=c("other - carnivores", "other - herbivores"), 
-       col=c("red", "green"), lwd=2, inset=c(0.05,0.01), cex=1.3)
+carniExtDiffZscore = carniExtZscore - nonPredExtZscore
+full_tsplot(allDiv$mid, ys=list(carniExtDiffZscore), ylim=c(-1,1), tit="Difference of Zscores Extinctions", cols=c("red"), labels=c("Predators - Non-Predators"))
