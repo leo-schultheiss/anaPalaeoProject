@@ -222,43 +222,76 @@ load(url("https://github.com/divDyn/ddPhanero/raw/master/data/Stratigraphy/2018-
 source("https://github.com/divDyn/ddPhanero/raw/master/scripts/strat/2019-05-31/ordProcess.R")
 
 ##### DONE with preprocessing ########
+par(mar=c(4,12,3,3))
 
-omnivores = dat[grepl('omnivore', dat$diet, fixed=TRUE),]
-nrow(omnivores)
-pure_omnivores = dat[dat$diet == 'omnivore',]
-nrow(pure_omnivores)
+barplot(sort(table(dat$diet), decreasing = TRUE),las=2,horiz = TRUE, )
+
+carnivores = dat[dat$diet == 'carnivore',]
+herbivores = dat[dat$diet == 'herbivore' | dat$diet =='grazer', ]
+other = dat[dat$diet != 'carnivore' & dat$diet != 'herbivore' & dat$diet != 'grazer',]
 
 
-#omniSampStg<- binstat(omnivores, bin="stg", tax="clgen", coll="collection_no", 
-#                  duplicates=FALSE)  
-#pure_omni_samp_stg = binstat(pure_omnivores, bin="stg", tax="clgen", coll="collection_no", 
-#                             duplicates=FALSE)
-#allSampStg = binstat(dat, bin="stg", tax="clgen", coll="collection_no", duplicates=FALSE)
+# what phyla do the samples belong to?
+par(mar=c(4,11,4,4))
+barplot(sort(table(carnivores$phylum), decreasing = TRUE),las=2,horiz = TRUE)
+barplot(sort(table(herbivores$phylum), decreasing = TRUE),las=2,horiz = TRUE)
+barplot(sort(table(other$phylum), decreasing = TRUE),las=2,horiz = TRUE)
 
-omniDiv = divDyn(omnivores ,bin="stg", tax="clgen")
-omniDivStg = merge(stages, omniDiv, by="stg")
-pureOmniDiv = divDyn(pure_omnivores, bin ="stg", tax="clgen")
-pureOmniDivStg = merge(stages, pureOmniDiv, bin="stg", tax="clgen")
-allDiv = divDyn(dat, bin="stg", tax="clgen")
-allDivStg = merge(stages, allDiv, by="stg")
+
+# analyze diversity dynamics of omnivores and others
+allDiv = merge(stages, divDyn(dat, bin="stg", tax="clgen"), by="stg")
+carniDiv = merge(stages, divDyn(carnivores, bin = "stg", tax="clgen"), by="stg")
+herbiDiv = merge(stages, divDyn(herbivores, bin ="stg", tax="clgen"), by="stg")
+otherDiv = merge(stages, divDyn(other, bin ="stg", tax="clgen"), by="stg")
 
 # relative extinction rates
-# tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
-#       ylab="Extinction Proportion")
-#lines(omniDivStg$mid, omniDivStg$extProp, col="red")
-#lines(allDivStg$mid, allDivStg$extProp)
-
-# plot difference of relative extinction rates
-tsplot(stages, boxes="sys", shading="sys", xlim=15:95, ylim=c(-0.5,0.5), 
-       ylab="Difference between Population Ext. and Omni Ext.")
-
-lines(omniDivStg$mid, omniDivStg$extProp- allDivStg$extProp, col="red")
-lines(pureOmniDivStg$mid, pureOmniDivStg$extProp - allDivStg$extProp, col="blue")
-abline(h=0)
-# add extinction events
+tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(0,1), 
+       ylab="Extinction Proportion")
+lines(allDiv$mid, otherDiv$extProp, col="black")
+lines(allDiv$mid, carniDiv$extProp, col="red")
+lines(allDiv$mid, herbiDiv$extProp, col="green")
 abline(v=66)
 abline(v=201)
 abline(v=252)
 abline(v=372)
 abline(v=445)
+legend("topleft", bg="white", legend=c("carnivores", "herbivores" ,"other"), 
+       col=c("red", "green","black"), lwd=2, inset=c(0.05,0.01), cex=1.3)
 
+# zscored extinction rates (raw data, foote metric, since biases don't matter for this analysis)
+zscore = function(x) {
+  return (x - mean(x, na.rm=TRUE)) / sd(x, na.rm=TRUE)
+}
+allExtZscore = zscore(allDiv$extPC)
+carniExtZscore = zscore(carniDiv$extPC)
+herbiExtZscore = zscore(herbiDiv$extPC)
+otherExtZscore = zscore(otherDiv$extPC)
+tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(-2,2), 
+       ylab="Z-Scored Extinction PC")
+lines(allDiv$mid, allExtZscore, col="black")
+lines(allDiv$mid, carniExtZscore, col="red")
+lines(allDiv$mid, herbiExtZscore, col="green")
+abline(h=0)
+abline(v=66)
+abline(v=201)
+abline(v=252)
+abline(v=372)
+abline(v=445)
+legend("topleft", bg="white", legend=c("carnivores", "herbivores" ,"other"), 
+       col=c("red", "green","black"), lwd=2, inset=c(0.05,0.01), cex=1.3)
+
+# difference between zscores
+carniExtDiffZscore = otherExtZscore - carniExtZscore
+herbiExtDiffZscore = otherExtZscore - herbiExtZscore
+tsplot(stages, boxes="sys", shading="sys", xlim=4:95, ylim=c(-1,1), 
+       ylab="Difference of Z-Scored Extinction PC")
+lines(allDiv$mid, carniExtDiffZscore, col="red")
+lines(allDiv$mid, herbiExtDiffZscore, col="green")
+abline(h=0)
+abline(v=66)
+abline(v=201)
+abline(v=252)
+abline(v=372)
+abline(v=445)
+legend("topleft", bg="white", legend=c("other - carnivores", "other - herbivores"), 
+       col=c("red", "green"), lwd=2, inset=c(0.05,0.01), cex=1.3)
