@@ -327,20 +327,23 @@ total = allDiv$divSIB
 carni = carniDiv$divSIB
 proportion = carni / total
 
-prop_tsplot(proportion)
+prop_tsplot(proportion, tit = "Relative Diversity by Diet")
+
+proportion = carniDiv$divCSIB / allDiv$divCSIB
+prop_tsplot(proportion, tit="Relative")
 
 
 # exclude ammonites
 total = allDiv$divSIB
 carni = carniAmmonExDiv$divSIB
 proportion = carni / total
-prop_tsplot(proportion,tit="Relative Makeup of Diets (Ammonites Counted towards Other)")
+prop_tsplot(proportion,tit="Relative Makeup by Diets (Ammonites Counted towards Other)")
 
 # exclude trilobites
 total = allDiv$divSIB
 carni = carniTriloExDiv$divSIB
 proportion = carni / total
-prop_tsplot(proportion, tit="Relative Makeup of Diets (Trilobites Counted towards Other)")
+prop_tsplot(proportion, tit="Relative Makeup by Diets (Trilobites Counted towards Other)")
 
 
 ##### total extinction rates
@@ -416,13 +419,16 @@ logOdds(carniDiv$ext2f3[extintions_nonperm], nonCarniDiv$ext2f3[extintions_nonpe
 
 
 
-boxplot(carniDiv$ext2f3, nonCarniDiv$ext2f3, cols =c(carniCol, nonCarniCol), xlab="Diet", ylab="Foote Extinction Rate")
-points(rep(1, 5), carniDiv$extPC[extinctions], col="red",pch=21, bg="white", cex=1.)
-points(rep(2, 5), nonCarniDiv$extPC[extinctions], col="red",pch=21, bg="white", cex=1.)
+boxplot(carniDiv$ext2f3, nonCarniDiv$ext2f3, cols =c(carniCol, nonCarniCol), xlab="Diet", ylab="Foote Extinction Rate", names=c("Carnivores", "Other"))
+points(rep(1, 5), carniDiv$ext2f3[extinctions], col="red",pch=21, bg="white", cex=1.)
+points(rep(2, 5), nonCarniDiv$ext2f3[extinctions], col="red",pch=21, bg="white", cex=1.)
 legend("topright", legend=c("Mass Extinctions"), col=c("red"), cex=1.3, inset=c(0.05,0.05), pch=21)
-
+title("Extinction rates")
 
 wilcox.test(carniDiv$extPC, nonCarniDiv$extPC, alternative = "two.sided")
+wilcox.test(carniDiv$ext2f3, nonCarniDiv$ext2f3, alternative = "two.sided")
+
+wilcox.test(carniDiv$ext2f3[extinctions], nonCarniDiv$ext2f3[extinctions], alternative="two.sided")
 
 boxplot(carniAmmonExDiv$extPC, noncarniAmmonExDiv$extPC, cols =c(carniCol, nonCarniCol))
 wilcox.test(carniAmmonExDiv$extPC, noncarniAmmonExDiv$extPC, alternative = "two.sided")
