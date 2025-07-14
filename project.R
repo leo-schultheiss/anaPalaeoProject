@@ -417,7 +417,68 @@ extintions_nonperm = c(20, 34, 58, 81)
 
 logOdds(carniDiv$ext2f3[extintions_nonperm], nonCarniDiv$ext2f3[extintions_nonperm])
 
+library(ggplot2)
+library(ggsignif)
+library(dplyr)
 
+df = data.frame(group = rep(c("Carnivore", "Non-Carnivore"), each=length(carniDiv$ext2f3)), value = c(carniDiv$ext2f3, nonCarniDiv$ext2f3))
+
+# Label extinction
+extinction_mask <- rep(seq_len(length(carniDiv$ext2f3)) %in% extinctions, times = length(unique(df$group)))
+df$extinction <- ifelse(extinction_mask, "extinction", "normal")
+df$extinction <- factor(df$extinction, levels = c("normal", "extinction"))
+
+comparisons = list(c("Carnivore", "Non-Carnivore"))
+  
+  # Plot: compare groups within each extinction status
+ggplot(df, aes(x = group, y = value)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(color = extinction), width = 0.2, height = 0) +
+  geom_signif(comparisons = comparisons, 
+              map_signif_level = TRUE, 
+              test = "t.test", 
+              step_increase = 0.1) +
+  facet_wrap(~ extinction) +
+  scale_color_manual(values = c("normal" = "black", "extinction" = "red")) +
+  theme_minimal() +
+  labs(
+    title = "Group-wise Comparison Within Each extinction Status",
+    subtitle = "Comparing A vs B and B vs C separately for extinctioned and non-extinctioned points",
+    x = "Group",
+    y = "Value"
+  )
+
+ext_pvalue = wilcox.test(carniDiv$ext2f3[extinctions], nonCarniDiv$ext2f3[extinctions], alternative="two.sided")[3]$p.value
+non_ext_pvalue = wilcox.test(carniDiv$ext2f3[-extinctions], nonCarniDiv$ext2f3[-extinctions], alternative="two.sided")[3]$p.value
+
+
+ggplot(df, aes(x = group, y = value, fill = extinction)) +
+  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
+  geom_signif(
+    map_signif_level = TRUE,
+    y_position = 1.2,
+    step_increase = 0.1,
+    xmin=0.8,
+    xmax=1.8,
+    annotation = paste0("*** (p=",non_ext_pvalue ,")")
+  ) +
+  geom_signif(
+    y_position = 1.3,
+    step_increase = 0.1,
+    xmin=1.2,
+    xmax=2.2,
+    annotation = paste0("NS (p=",ext_pvalue,")")
+  ) +
+  scale_fill_manual(values = c("normal" = "gray70", "extinction" = "red")) +
+  scale_color_manual(values = c("normal" = "black", "extinction" = "red")) +
+  theme_minimal() +
+  labs(
+    title = "Grouped Boxplots with extinction as Blocking Variable",
+    x = "Group",
+    y = "Value",
+    fill = "Type",
+    color = "Type"
+  )
 
 boxplot(carniDiv$ext2f3, nonCarniDiv$ext2f3, cols =c(carniCol, nonCarniCol), xlab="Diet", ylab="Foote Extinction Rate", names=c("Carnivores", "Other"))
 points(rep(1, 5), carniDiv$ext2f3[extinctions], col="red",pch=21, bg="white", cex=1.)
