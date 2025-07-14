@@ -536,11 +536,6 @@ full_tsplot(
   ylab = "Proportion"
 )
 
-##### RAREFACTION #######
-
-
-#########################
-
 # zscored extinction rates (raw data, foote metric, since biases don't matter for this analysis)
 zscore = function(x) {
   return (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
@@ -588,6 +583,8 @@ logOdds(carniDiv$ext2f3[non_extinctions], nonCarniDiv$ext2f3[non_extinctions])
 extintions_nonperm = c(20, 34, 58, 81)
 
 logOdds(carniDiv$ext2f3[extintions_nonperm], nonCarniDiv$ext2f3[extintions_nonperm])
+
+###### Analyzing extinction rates ########
 
 library(ggplot2)
 library(ggsignif)
@@ -642,49 +639,73 @@ ggplot(df, aes(x = group, y = value, colour = extinction)) +
     color = "Type"
   )
 
-boxplot(
-  carniDiv$ext2f3,
-  nonCarniDiv$ext2f3,
-  cols = c(carniCol, nonCarniCol),
-  xlab = "Diet",
-  ylab = "Foote Extinction Rate",
-  names = c("Carnivores", "Other")
-)
-points(
-  rep(1, 5),
-  carniDiv$ext2f3[extinctions],
-  col = "red",
-  pch = 21,
-  bg = "white",
-  cex = 1.
-)
-points(
-  rep(2, 5),
-  nonCarniDiv$ext2f3[extinctions],
-  col = "red",
-  pch = 21,
-  bg = "white",
-  cex = 1.
-)
-legend(
-  "topright",
-  legend = c("Mass Extinctions"),
-  col = c("red"),
-  cex = 1.3,
-  inset = c(0.05, 0.05),
-  pch = 21
-)
-title("Extinction rates")
 
-wilcox.test(carniDiv$extPC, nonCarniDiv$extPC, alternative = "two.sided")
-wilcox.test(carniDiv$ext2f3, nonCarniDiv$ext2f3, alternative = "two.sided")
+##### SUBSAMPLING #######
 
-wilcox.test(carniDiv$ext2f3[extinctions], nonCarniDiv$ext2f3[extinctions], alternative =
-              "two.sided")
+n_iter = 1000
+n_min = 5
+p_values <- numeric(n_iter)
 
-boxplot(carniAmmonExDiv$extPC,
-        noncarniAmmonExDiv$extPC,
-        cols = c(carniCol, nonCarniCol))
-wilcox.test(carniAmmonExDiv$extPC,
-            noncarniAmmonExDiv$extPC,
-            alternative = "two.sided")
+for (i in 1:n_iter) {
+  carni_sub = carniDiv[-c(extinctions)]
+  noncarni_sub = nonCarniDiv[-c(extinctions)]
+  
+  carni_sub <- carni_sub[sample(nrow(carniDiv), n_min), ]
+  noncarni_sub <- noncarni_sub[sample(nrow(nonCarniDiv), n_min), ]
+  df_sub = data.frame(value=c(carni_sub$ext2f3, noncarni_sub$ext2f3), group=rep(c("Carnivore", "Non-Carnivore"), each = nrow(carniDiv)))
+  test_result <- wilcox.test(value ~ group, data = df_sub)
+  p_values[i] <- test_result$p.value
+}
+
+# Summary of results
+summary(p_values)
+hist(p_values, main = "P-value distribution from subsampling")
+p_lower_bound = quantile(p_values, probs=c(0.025))
+p_upper_bound = quantile(p_values, probs=c(0.975))
+
+
+df_sub$extinction <- ifelse(extinction_mask, "mass-extinction", "normal")
+df_sub$extinction <- factor(df_sub$extinction, levels = c("normal", "mass-extinction"))
+
+comparisons = list(c("Carnivore", "Non-Carnivore"))
+
+
+ext_pvalue = wilcox.test(carniDiv$ext2f3[extinctions], nonCarniDiv$ext2f3[extinctions], alternative =
+                           "two.sided")[3]$p.value
+non_ext_pvalue = wilcox.test(carniDiv$ext2f3[-extinctions], nonCarniDiv$ext2f3[-extinctions], alternative =
+                               "two.sided")[3]$p.value
+
+
+ggplot(df, aes(x = group, y = value, colour = extinction)) +
+  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
+  geom_jitter(aes(color = extinction, stroke = 1),
+              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
+  geom_signif(
+    map_signif_level = TRUE,
+    y_position = 1.5,
+    step_increase = 0.1,
+    xmin = 0.8,
+    xmax = 1.8,
+    annotation = paste0("NS (Wilcox,", signif(p_lower_bound, digits = 3) ,"<p<", signif(p_upper_bound, digits = 3) , ", 95% Subsampling)")
+  ) +
+  geom_signif(
+    y_position = 1.35,
+    step_increase = 0.1,
+    xmin = 1.2,
+    xmax = 2.2,
+    annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 3), ")")
+  ) +
+  scale_fill_manual(values = c("normal" = "gray70", "mass-extinction" = "red")) +
+  scale_color_manual(values = c("normal" = "black", "mass-extinction" = "red")) +
+  theme_minimal() +
+  labs(
+    title = "Difference in extinction rates of Carnivores and Non-Carnivores",
+    x = "Diet",
+    y = "Second-for-Third Corrected Extinction Rate",
+    fill = "Type",
+    color = "Type"
+  )
+
+
+#########################
+
