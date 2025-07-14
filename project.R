@@ -709,8 +709,8 @@ ggplot(df, aes(x = diet, y = extPC, colour = food_mass_extinction)) +
   labs(
     title = "Extinction rates of Carnivores and Non-Carnivores, Subsampled",
     x = "Diet",
-    y = "Second-for-Third Corrected Extinction Rate",
-    color = "Mass Extinction"
+    y = "Raw per Capita Extinction Rate",
+    color = "Food Mass Extinction"
   )
 
 ######## rate splitting #########
