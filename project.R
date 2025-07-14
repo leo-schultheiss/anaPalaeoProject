@@ -275,27 +275,16 @@ barplot(sort(table(dat$diet), decreasing = TRUE),
 carnivores = dat[dat$diet == 'carnivore', ]
 nonCarnivores = dat[dat$diet != 'carnivore', ]
 
-herbivores = dat[dat$diet == 'herbivore' | dat$diet == 'grazer', ]
-other = dat[dat$diet != 'carnivore' &
-              dat$diet != 'herbivore' & dat$diet != 'grazer', ]
+carnivores_ammoniteEx = carnivores[carnivores$order != "Ammonitida", ]
+nonCarnivores_ammoniteEx = dat[nonCarnivores$order == "Ammonitida", ]
 
-carnivores_ammoniteEx = dat[dat$diet == 'carnivore' &
-                              dat$order != "Ammonitida", ]
-nonCarnivores_ammoniteEx = dat[dat$diet != 'carnivore' |
-                                 dat$order == "Ammonitida", ]
-
-carnivores_trilobiteEx = dat[dat$diet == 'carnivore' &
-                               dat$class != "Trilobita", ]
-nonCarnivores_trilobiteEx = dat[dat$diet != 'carnivore' |
-                                  dat$class == "Trilobita", ]
+carnivores_trilobiteEx = carnivores[carnivores$class != "Trilobita", ]
+nonCarnivores_trilobiteEx = nonCarnivores[nonCarnivores$class == "Trilobita", ]
 
 
-# what phyla do the samples belong to?
+#### what phyla do the samples belong to?####
 par(mar = c(4, 11, 4, 4))
 barplot(sort(table(carnivores$phylum), decreasing = TRUE),
-        las = 2,
-        horiz = TRUE)
-barplot(sort(table(herbivores$phylum), decreasing = TRUE),
         las = 2,
         horiz = TRUE)
 barplot(sort(table(other$phylum), decreasing = TRUE),
@@ -304,7 +293,7 @@ barplot(sort(table(other$phylum), decreasing = TRUE),
 par(mar = c(4, 4, 4, 4))
 
 
-# analyze diversity dynamics of omnivores and others
+#### group data ####
 divStg = function(x) {
   merge(stages, divDyn(x, bin = "stg", tax = "clgen"), by = "stg")
 }
@@ -318,6 +307,35 @@ noncarniAmmonExDiv = divStg(nonCarnivores_ammoniteEx)
 
 carniTriloExDiv = divStg(carnivores_trilobiteEx)
 noncarniTriloExDiv = divStg(nonCarnivores_trilobiteEx)
+
+
+library(dplyr)
+mass_extinction_stages = c("Katian", "Famennian", "Changhsingian", "Rhaetian", "Maastrichtian")
+food_mass_extinctions = c("Katian", "Famennian", "Maastrichtian")
+
+carniDiv$diet = "Carnivore"
+nonCarniDiv$diet = "Non-Carnivore"
+df = rbind(carniDiv, nonCarniDiv)
+df = df %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
+df = df %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
+
+
+##### log odds analysis #### 
+
+logOdds = function(a, b) {
+  log(sum(a, na.rm = TRUE) / sum(b, na.rm = TRUE))
+}
+
+
+logOdds(df[df$diet == "Carnivore" & df$mass_extinction == TRUE, ]$extPC, df[df$diet == "Non-Carnivore" & df$mass_extinction == TRUE, ]$extPC)
+logOdds(df[df$diet == "Carnivore" & df$mass_extinction == FALSE, ]$extPC, df[df$diet == "Non-Carnivore" & df$mass_extinction == FALSE, ]$extPC)
+
+logOdds(carniDiv$extPC[non_extinctions], nonCarniDiv$extPC[non_extinctions])
+
+logOdds(carniDiv$ext2f3[extinctions], nonCarniDiv$ext2f3[extinctions])
+logOdds(carniDiv$ext2f3[non_extinctions], nonCarniDiv$ext2f3[non_extinctions])
+
+########
 
 carniCol = "brown1"
 nonCarniCol = "black"
@@ -381,7 +399,7 @@ full_tsplot <- function(x = NULL,
 
 
 
-# diversity rates
+###### diversity rates #####
 full_tsplot(
   x = allDiv$mid,
   ys = list(carniDiv$divSIB, nonCarniDiv$divSIB),
@@ -419,9 +437,6 @@ carni = carniDiv$divSIB
 proportion = carni / total
 
 prop_tsplot(proportion, tit = "Relative Diversity by Diet")
-
-proportion = carniDiv$divCSIB / allDiv$divCSIB
-prop_tsplot(proportion, tit = "Relative")
 
 
 # exclude ammonites
@@ -565,63 +580,31 @@ full_tsplot(
 )
 
 
-#### mass extinctions ####
-logOdds = function(a, b) {
-  log(sum(a, na.rm = TRUE) / sum(b, na.rm = TRUE))
-}
-
-extinctions = c(20, 34, 51, 58, 81)
-non_extinctions = 0:94
-non_extinctions = non_extinctions[-extinctions] + 1
-
-logOdds(carniDiv$extPC[extinctions], nonCarniDiv$extPC[extinctions])
-logOdds(carniDiv$extPC[non_extinctions], nonCarniDiv$extPC[non_extinctions])
-
-logOdds(carniDiv$ext2f3[extinctions], nonCarniDiv$ext2f3[extinctions])
-logOdds(carniDiv$ext2f3[non_extinctions], nonCarniDiv$ext2f3[non_extinctions])
-
-extintions_nonperm = c(20, 34, 58, 81)
-
-logOdds(carniDiv$ext2f3[extintions_nonperm], nonCarniDiv$ext2f3[extintions_nonperm])
-
 ###### Analyzing extinction rates ########
 
 library(ggplot2)
 library(ggsignif)
-library(dplyr)
 
-df = data.frame(
-  group = rep(c("Carnivore", "Non-Carnivore"), each = length(carniDiv$ext2f3)),
-  value = c(carniDiv$ext2f3, nonCarniDiv$ext2f3)
-)
-
-# Label extinction
-extinction_mask <- rep(seq_len(length(carniDiv$ext2f3)) %in% extinctions, times = length(unique(df$group)))
-df$extinction <- ifelse(extinction_mask, "mass-extinction", "no mass-extinction")
-df$extinction <- factor(df$extinction, levels = c("no mass-extinction", "mass-extinction"))
-
-df = na.omit(df)
 
 comparisons = list(c("Carnivore", "Non-Carnivore"))
 
-carniExt_value = df[df$extinction == "mass-extinction" & df$group == "Carnivore", ]$value
-nonCarniExt_value = df[df$extinction == "mass-extinction" & df$group == "Non-Carnivore", ]$value
+carniExt_value = df[df$mass_extinction == TRUE & df$diet == "Carnivore", ]$extPC
+nonCarniExt_value = df[df$mass_extinction == TRUE & df$diet == "Non-Carnivore", ]$extPC
 ext_pvalue = wilcox.test(carniExt_value, nonCarniExt_value, alternative =
                            "two.sided")[3]$p.value
 
-carniNoExt_value = df[df$extinction == "no mass-extinction" & df$group == "Carnivore", ]$value
-nonCarniNoExt_value = df[df$extinction == "no mass-extinction" & df$group == "Non-Carnivore", ]$value
+carniNoExt_value = df[df$mass_extinction == FALSE & df$diet == "Carnivore", ]$extPC
+nonCarniNoExt_value = df[df$mass_extinction == FALSE & df$diet == "Non-Carnivore", ]$extPC
 
 non_ext_pvalue = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative =
                                "two.sided")[3]$p.value
 
 
-ggplot(df, aes(x = group, y = value, colour = extinction)) +
+ggplot(df, aes(x = diet, y = extPC, colour = mass_extinction)) +
   geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = extinction, stroke = 1),
+  geom_jitter(aes(color = mass_extinction, stroke = 1),
               position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
   geom_signif(
-    map_signif_level = TRUE,
     y_position = 1.5,
     step_increase = 0.1,
     xmin = 0.8,
@@ -635,15 +618,13 @@ ggplot(df, aes(x = group, y = value, colour = extinction)) +
     xmax = 2.2,
     annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 3), ")")
   ) +
-  scale_fill_manual(values = c("no mass-extinction" = "gray70", "mass-extinction" = "red")) +
-  scale_color_manual(values = c("no mass-extinction" = "black", "mass-extinction" = "red")) +
+  scale_color_manual(values = c("black", "red")) +
   theme_minimal() +
   labs(
     title = "Extinction Rates of Carnivores and Non-Carnivores",
     x = "Diet",
     y = "Second-for-Third Corrected Extinction Rate",
-    fill = "Type",
-    color = "Type"
+    color = "Mass Extinction"
   )
 
 
@@ -654,13 +635,13 @@ p_values <- numeric(n_iter)
 n_min = 5 # number of mass extinctions
 
 for (i in 1:n_iter) {
-  carni_sub = df[df$extinction == "no mass-extinction" & df$group == "Carnivore", ]
-  noncarni_sub = df[df$extinction == "no mass-extinction" & df$group == "Non-Carnivore", ]
+  carni_sub = df[df$mass_extinction == FALSE & df$diet == "Carnivore", ]
+  noncarni_sub = df[df$mass_extinction == FALSE & df$diet == "Non-Carnivore", ]
   carni_sub <- carni_sub[sample(nrow(carni_sub), n_min), ]
   noncarni_sub <- noncarni_sub[sample(nrow(noncarni_sub), n_min), ]
   df_sub = rbind(carni_sub, noncarni_sub)
 
-  test_result <- wilcox.test(value ~ group, data = df_sub, alternative="two.sided")
+  test_result <- wilcox.test(extPC ~ diet, data = df_sub, alternative="two.sided")
   p_values[i] <- test_result$p.value
 }
 
@@ -671,9 +652,9 @@ length(p_values[p_values < 0.05])
 p_lower_bound = quantile(p_values, probs=c(0.025))
 p_upper_bound = quantile(p_values, probs=c(0.975))
 
-ggplot(df, aes(x = group, y = value, colour = extinction)) +
+ggplot(df, aes(x = diet, y = extPC, colour = mass_extinction)) +
   geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = extinction, stroke = 1),
+  geom_jitter(aes(color = mass_extinction, stroke = 1),
               position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
   geom_signif(
     map_signif_level = TRUE,
@@ -690,17 +671,47 @@ ggplot(df, aes(x = group, y = value, colour = extinction)) +
     xmax = 2.2,
     annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 3), ")")
   ) +
-  scale_fill_manual(values = c("no mass-extinction" = "gray70", "mass-extinction" = "red")) +
-  scale_color_manual(values = c("no mass-extinction" = "black", "mass-extinction" = "red")) +
+  scale_color_manual(values = c("black","red")) +
   theme_minimal() +
   labs(
     title = "Extinction rates of Carnivores and Non-Carnivores, Subsampled",
     x = "Diet",
     y = "Second-for-Third Corrected Extinction Rate",
-    fill = "Type",
-    color = "Type"
+    color = "Mass Extinction"
   )
 
+
+#### food shortage #####
+food_ext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, alternative = "two.sided")[3]$p.value
+
+
+ggplot(df, aes(x = diet, y = extPC, colour = food_mass_extinction)) +
+  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
+  geom_jitter(aes(color = food_mass_extinction, stroke = 1),
+              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
+  # geom_signif(
+  #   map_signif_level = TRUE,
+  #   y_position = 1.5,
+  #   step_increase = 0.1,
+  #   xmin = 0.8,
+  #   xmax = 1.8,
+  #   annotation = paste0("NS (Wilcox,", signif(p_lower_bound, digits = 3) ,"=<p<=", signif(p_upper_bound, digits = 3) , ", 95% CI)")
+  # ) +
+  geom_signif(
+    y_position = 1.4,
+    step_increase = 0.1,
+    xmin = 1.2,
+    xmax = 2.2,
+    annotation = paste0("NS (Wilcox, p=", signif(food_ext_pvalue, digits = 3), ")")
+  ) +
+  scale_color_manual(values = c("black","red")) +
+  theme_minimal() +
+  labs(
+    title = "Extinction rates of Carnivores and Non-Carnivores, Subsampled",
+    x = "Diet",
+    y = "Second-for-Third Corrected Extinction Rate",
+    color = "Mass Extinction"
+  )
 
 ######## rate splitting #########
 # use ratesplit method to determine significant difference between carnivore and non-carnivore extinction rate across all bins
@@ -711,38 +722,23 @@ grouped_df = rbind(carnivores, nonCarnivores)
 rs = ratesplit(grouped_df, sel="group", tax="genus", bin="stg")
 rs
 
-# origination rate plot
-tsplot(stages, boxes="sys", shading="series", xlim=54:95, 
-       ylab="raw per capita originations")
-lines(stages$mid, carniDiv$oriPC, lwd=2, lty=1, col="red")
-lines(stages$mid, nonCarniDiv$oriPC, lwd=2, lty=2, col="blue")
-legend("topright", inset=c(0.1,0.1), legend=c("z", "az"), 
-       lwd=2, lty=c(1,2), col=c("red", "blue"), bg="white")
-
-# display selectivity with points
-# select the higher rates
-selIntervals<-cbind(carniDiv$oriPC[rs$ori], nonCarniDiv$oriPC[rs$ori])
-groupSelector<-apply(selIntervals, 1, function(w) w[1]<w[2])
-# draw the points
-points(stages$mid[rs$ori[groupSelector]], carniDiv$oriPC[rs$ori[groupSelector]],
-       pch=16, col="red", cex=2)
-points(stages$mid[rs$ori[!groupSelector]], nonCarniDiv$oriPC[rs$ori[!groupSelector]],
-       pch=16, col="blue", cex=2)
-
 # extinction rate plot
-tsplot(stages, boxes="sys", shading="series", xlim=4:95, 
-       ylab="raw per capita extinctions")
-lines(stages$mid, carniDiv$extPC, lwd=2, lty=1, col="red")
-lines(stages$mid, nonCarniDiv$extPC, lwd=2, lty=2, col="blue")
+tsplot(stages, boxes="sys", shading="series", xlim=4:95, ylim=c(0, 1),
+       ylab="two-for-three corrected extinctions")
+abline(v = c(65, 200, 250, 360, 444), col = "black", lty=2, lwd=2)
+
+lines(stages$mid, carniDiv$extPC, lwd=2, col="red")
+lines(stages$mid, nonCarniDiv$extPC, lwd=2, col="blue")
 legend("topright", inset=c(0.1,0.1), legend=c("Carnivore", "Non-Carnivore"), 
-       lwd=2, lty=c(1,2), col=c("red", "blue"), bg="white")
+       lwd=2, col=c("red", "blue"), bg="white")
 
 # display selectivity with points
 # select the higher rates
 selIntervals<-cbind(carniDiv$extPC[rs$ext], nonCarniDiv$extPC[rs$ext])
-groupSelector<-apply(selIntervals, 1, function(w) w[1]<w[2])
+groupSelector<-apply(selIntervals, 1, function(w) w[1]>w[2])
 # draw the points
 points(stages$mid[rs$ext[groupSelector]], carniDiv$extPC[rs$ext[groupSelector]],
        pch=16, col="red", cex=2)
 points(stages$mid[rs$ext[!groupSelector]], nonCarniDiv$extPC[rs$ext[!groupSelector]],
        pch=16, col="blue", cex=2)
+
