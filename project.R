@@ -536,7 +536,10 @@ full_tsplot(
   ylab = "Proportion"
 )
 
+##### RAREFACTION #######
 
+
+#########################
 
 # zscored extinction rates (raw data, foote metric, since biases don't matter for this analysis)
 zscore = function(x) {
@@ -597,8 +600,8 @@ df = data.frame(
 
 # Label extinction
 extinction_mask <- rep(seq_len(length(carniDiv$ext2f3)) %in% extinctions, times = length(unique(df$group)))
-df$extinction <- ifelse(extinction_mask, "extinction", "normal")
-df$extinction <- factor(df$extinction, levels = c("normal", "extinction"))
+df$extinction <- ifelse(extinction_mask, "mass-extinction", "normal")
+df$extinction <- factor(df$extinction, levels = c("normal", "mass-extinction"))
 
 comparisons = list(c("Carnivore", "Non-Carnivore"))
 
@@ -619,22 +622,22 @@ ggplot(df, aes(x = group, y = value, colour = extinction)) +
     step_increase = 0.1,
     xmin = 0.8,
     xmax = 1.8,
-    annotation = paste0("*** (p=", signif(non_ext_pvalue, digits = 3) , ")")
+    annotation = paste0("*** (Wilcox, p=", signif(non_ext_pvalue, digits = 3) , ")")
   ) +
   geom_signif(
-    y_position = 1.4,
+    y_position = 1.35,
     step_increase = 0.1,
     xmin = 1.2,
     xmax = 2.2,
-    annotation = paste0("NS (p=", signif(ext_pvalue, digits = 3), ")")
+    annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 3), ")")
   ) +
-  scale_fill_manual(values = c("normal" = "gray70", "extinction" = carniCol)) +
-  scale_color_manual(values = c("normal" = "black", "extinction" = "red")) +
+  scale_fill_manual(values = c("normal" = "gray70", "mass-extinction" = "red")) +
+  scale_color_manual(values = c("normal" = "black", "mass-extinction" = "red")) +
   theme_minimal() +
   labs(
-    title = "Difference in extintion rates of Carnivores and Non-Carnivores",
-    x = "Group",
-    y = "second-for-third extinction rate",
+    title = "Difference in extinction rates of Carnivores and Non-Carnivores",
+    x = "Diet",
+    y = "Second-for-Third Corrected Extinction Rate",
     fill = "Type",
     color = "Type"
   )
