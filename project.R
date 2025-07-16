@@ -1,6 +1,6 @@
 setwd('/home/leo/analytical_palaeobiology_project/')
 df = read.csv('mass_extinction_divDyn.csv')
-df_ammonEx = read.csv('mass_extinction_divDyn_ammonites_not_predators.csv')
+df_cephaEx = read.csv('mass_extinction_divDyn_ammonites_not_predators.csv')
 df_triloEx = read.csv('mass_extinction_divDyn_trilobites_not_predators.csv')
 
 ##### log odds analysis #### 
@@ -119,7 +119,7 @@ prop_tsplot(proportion, tit = "Porportion of Diversity by Diet")
 
 # exclude ammonites
 total = df[df$diet == "Both", ]$divSIB
-carni = df_ammonEx[df_ammonEx$diet == "Carnivore", ]$divSIB
+carni = df_cephaEx[df_cephaEx$diet == "Carnivore", ]$divSIB
 proportion = carni / total
 prop_tsplot(proportion, tit = "Proportion of Diversity by Diet (Ammonites not Carnivore)")
 
@@ -137,16 +137,16 @@ full_tsplot(
   tit = "Extinctions",
   ylab = "Foote Metric",
   ylim = c(0, max(
-    max(df_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
-    max(nondf_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
+    max(df_cephaEx[df_cephaEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
+    max(df_cephaEx[df_cephaEx$diet == "Non-Carnivore", ]$extPC, na.rm = TRUE),
     max(df_triloEx[df_triloEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
-    max(nondf_triloEx[df_triloEx$diet == "Carnivore", ]$extPC, na.rm = TRUE)
+    max(df_triloEx[df_triloEx$diet == "Non-Carnivore", ]$extPC, na.rm = TRUE)
   ))
 )
 # add ammonite lines
 lines(
   x = df[df$diet == "Both", ]$mid,
-  y = df_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC,
+  y = df_cephaEx[df_cephaEx$diet == "Carnivore", ]$extPC,
   lwd = 2,
   col = carniCol,
   type = "l",
@@ -154,7 +154,7 @@ lines(
 )
 lines(
   x = df[df$diet == "Both", ]$mid,
-  y = nondf_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC,
+  y = nondf_cephaEx[df_cephaEx$diet == "Carnivore", ]$extPC,
   lwd = 2,
   col = nonCarniCol,
   type = "l",
@@ -218,7 +218,7 @@ full_tsplot(
 )
 full_tsplot(
   x = df[df$diet == "Both", ]$mid,
-  ys = list(df_ammonEx[df_ammonEx$diet == "Carnivore", ]$extProp, nondf_ammonEx[df_ammonEx$diet == "Carnivore", ]$extProp),
+  ys = list(df_cephaEx[df_cephaEx$diet == "Carnivore", ]$extProp, nondf_cephaEx[df_cephaEx$diet == "Carnivore", ]$extProp),
   tit = "Extinctions (ammonites counted as non-carnivores)",
   ylab = "Proportion"
 )

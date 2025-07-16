@@ -286,8 +286,8 @@ barplot(sort(table(nonCarnivores$phylum), decreasing = TRUE),
 par(mar = c(4, 4, 4, 4))
 
 # ammonites make up much of the carnivores after the triassic
-carnivores_ammoniteEx = dat[dat$diet == 'carnivore' & dat$order != "Cephalopoda", ]
-nonCarnivores_ammoniteEx = dat[dat$diet != 'carnivore' | dat$order == "Cephalopoda", ]
+carnivores_ammoniteEx = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
+nonCarnivores_ammoniteEx = dat[dat$diet != 'carnivore' | dat$class == "Cephalopoda", ]
 
 # trilobites account for most predators in the cambrium
 carnivores_trilobiteEx = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
@@ -295,7 +295,7 @@ nonCarnivores_trilobiteEx = dat[dat$class == "Trilobita", ]
 
 # cephalopoda make up much of the predators in the early triassic
 trias_carnivores = dat[dat$max_ma < 250 & dat$min_ma > 200 & dat$diet == 'carnivore', ]
-barplot(sort(table(trias_carnivores[trias_carnivores$class == 'Cephalopoda',]$genus)), las=2, horiz=TRUE)
+barplot(sort(table(trias_carnivores$class)), las=2, horiz=TRUE)
 
 
 # create and save dataframe containing diversity analysis ####
@@ -309,13 +309,11 @@ allDiv = divStg(dat)
 carniDiv = divStg(carnivores)
 nonCarniDiv = divStg(nonCarnivores)
 
-carniAmmonExDiv = divStg(carnivores_ammoniteEx)
-noncarniAmmonExDiv = divStg(nonCarnivores_ammoniteEx)
+carniCephaExDiv = divStg(carnivores_ammoniteEx)
+noncarniCephaExDiv = divStg(nonCarnivores_ammoniteEx)
 
 carniTriloExDiv = divStg(carnivores_trilobiteEx)
 noncarniTriloExDiv = divStg(nonCarnivores_trilobiteEx)
-
-
 
 
 library(dplyr)
@@ -332,9 +330,9 @@ df = df %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
 
 write.csv(df, "mass_extinction_divDyn.csv", row.names=FALSE, quote=FALSE)
 
-carniAmmonExDiv$diet = "Carnivore"
-noncarniAmmonExDiv$diet = "Non-Carnivore"
-df_cephaEx = rbind(allDiv, carniAmmonExDiv, noncarniAmmonExDiv)
+carniCephaExDiv$diet = "Carnivore"
+noncarniCephaExDiv$diet = "Non-Carnivore"
+df_cephaEx = rbind(allDiv, carniCephaExDiv, noncarniCephaExDiv)
 df_cephaEx = df_cephaEx %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
 df_cephaEx = df_cephaEx %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
 
