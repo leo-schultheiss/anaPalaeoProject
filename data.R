@@ -286,6 +286,9 @@ cloud
 carnivores = dat[dat$diet == 'carnivore', ]
 nonCarnivores = dat[dat$diet != 'carnivore', ]
 
+write.csv(carnivores, "carnivores.csv")
+write.csv(nonCarnivores, "non-carnivores.csv")
+
 
 
 #### what phyla do the samples belong to?####
