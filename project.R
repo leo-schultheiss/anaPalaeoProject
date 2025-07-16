@@ -77,7 +77,6 @@ full_tsplot <- function(x = NULL,
 }
 
 
-
 ###### diversity rates #####
 full_tsplot(
   x = df[df$diet == "Both", ]$mid,
@@ -120,7 +119,7 @@ prop_tsplot(proportion, tit = "Porportion of Diversity by Diet")
 
 # exclude ammonites
 total = df[df$diet == "Both", ]$divSIB
-carni = carniAmmonExDiv$divSIB
+carni = df_ammonEx[df_ammonEx$diet == "Carnivore", ]$divSIB
 proportion = carni / total
 prop_tsplot(proportion, tit = "Proportion of Diversity by Diet (Ammonites not Carnivore)")
 
@@ -138,8 +137,8 @@ full_tsplot(
   tit = "Extinctions",
   ylab = "Foote Metric",
   ylim = c(0, max(
-    max(carniAmmonExDiv$extPC, na.rm = TRUE),
-    max(noncarniAmmonExDiv$extPC, na.rm = TRUE),
+    max(df_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
+    max(nondf_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
     max(df_triloEx[df_triloEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
     max(nondf_triloEx[df_triloEx$diet == "Carnivore", ]$extPC, na.rm = TRUE)
   ))
@@ -147,7 +146,7 @@ full_tsplot(
 # add ammonite lines
 lines(
   x = df[df$diet == "Both", ]$mid,
-  y = carniAmmonExDiv$extPC,
+  y = df_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC,
   lwd = 2,
   col = carniCol,
   type = "l",
@@ -155,7 +154,7 @@ lines(
 )
 lines(
   x = df[df$diet == "Both", ]$mid,
-  y = noncarniAmmonExDiv$extPC,
+  y = nondf_ammonEx[df_ammonEx$diet == "Carnivore", ]$extPC,
   lwd = 2,
   col = nonCarniCol,
   type = "l",
@@ -219,7 +218,7 @@ full_tsplot(
 )
 full_tsplot(
   x = df[df$diet == "Both", ]$mid,
-  ys = list(carniAmmonExDiv$extProp, noncarniAmmonExDiv$extProp),
+  ys = list(df_ammonEx[df_ammonEx$diet == "Carnivore", ]$extProp, nondf_ammonEx[df_ammonEx$diet == "Carnivore", ]$extProp),
   tit = "Extinctions (ammonites counted as non-carnivores)",
   ylab = "Proportion"
 )

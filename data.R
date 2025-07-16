@@ -339,6 +339,3 @@ df_triloEx = df_triloEx %>% mutate(food_mass_extinction = stage %in% food_mass_e
 
 write.csv(df_triloEx, "mass_extinction_divDyn_trilobites_not_predators.csv", row.names=FALSE, quote=FALSE)
 
-
-
-
