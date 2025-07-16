@@ -273,11 +273,6 @@ source(
 carnivores = dat[dat$diet == 'carnivore', ]
 nonCarnivores = dat[dat$diet != 'carnivore', ]
 
-carnivores_ammoniteEx = dat[dat$diet == 'carnivore' & dat$order != "Ammonitida", ]
-nonCarnivores_ammoniteEx = dat[dat$diet != 'carnivore' | dat$order == "Ammonitida", ]
-
-carnivores_trilobiteEx = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
-nonCarnivores_trilobiteEx = dat[dat$class == "Trilobita", ]
 
 
 #### what phyla do the samples belong to?####
@@ -290,11 +285,25 @@ barplot(sort(table(nonCarnivores$phylum), decreasing = TRUE),
         horiz = TRUE)
 par(mar = c(4, 4, 4, 4))
 
+# ammonites make up much of the carnivores after the triassic
+carnivores_ammoniteEx = dat[dat$diet == 'carnivore' & dat$order != "Cephalopoda", ]
+nonCarnivores_ammoniteEx = dat[dat$diet != 'carnivore' | dat$order == "Cephalopoda", ]
+
+# trilobites account for most predators in the cambrium
+carnivores_trilobiteEx = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
+nonCarnivores_trilobiteEx = dat[dat$class == "Trilobita", ]
+
+# cephalopoda make up much of the predators in the early triassic
+trias_carnivores = dat[dat$max_ma < 250 & dat$min_ma > 200 & dat$diet == 'carnivore', ]
+barplot(sort(table(trias_carnivores[trias_carnivores$class == 'Cephalopoda',]$genus)), las=2, horiz=TRUE)
+
 
 # create and save dataframe containing diversity analysis ####
 divStg = function(x) {
   merge(stages, divDyn(x, bin = "stg", tax = "clgen"), by = "stg")
 }
+
+
 
 allDiv = divStg(dat)
 carniDiv = divStg(carnivores)
@@ -305,6 +314,7 @@ noncarniAmmonExDiv = divStg(nonCarnivores_ammoniteEx)
 
 carniTriloExDiv = divStg(carnivores_trilobiteEx)
 noncarniTriloExDiv = divStg(nonCarnivores_trilobiteEx)
+
 
 
 
@@ -324,11 +334,11 @@ write.csv(df, "mass_extinction_divDyn.csv", row.names=FALSE, quote=FALSE)
 
 carniAmmonExDiv$diet = "Carnivore"
 noncarniAmmonExDiv$diet = "Non-Carnivore"
-df_ammonEx = rbind(allDiv, carniAmmonExDiv, noncarniAmmonExDiv)
-df_ammonEx = df_ammonEx %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
-df_ammonEx = df_ammonEx %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
+df_cephaEx = rbind(allDiv, carniAmmonExDiv, noncarniAmmonExDiv)
+df_cephaEx = df_cephaEx %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
+df_cephaEx = df_cephaEx %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
 
-write.csv(df_ammonEx, "mass_extinction_divDyn_ammonites_not_predators.csv", row.names=FALSE, quote=FALSE)
+write.csv(df_cephaEx, "mass_extinction_divDyn_cephalopoda_not_predators.csv", row.names=FALSE, quote=FALSE)
 
 
 carniTriloExDiv$diet = "Carnivore"
