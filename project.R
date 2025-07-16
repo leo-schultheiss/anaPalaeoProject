@@ -79,7 +79,7 @@ full_tsplot <- function(x = NULL,
 ###### diversity rates #####
 full_tsplot(
   x = allDiv$mid,
-  ys = list(carniDiv$divSIB, nonCarniDiv$divSIB),
+  ys = list(df[df$diet == 'Carnivore', ]$divSIB, df[df$diet == 'Non-Carnivore', ]$divSIB),
   tit = "Diversity",
   ylab = "SIB Diversity",
   ylim = c(0, max(
@@ -109,8 +109,8 @@ prop_tsplot = function(proportion, tit = "Relative Makeup of Diets") {
   )
   
 }
-total = allDiv$divSIB
-carni = carniDiv$divSIB
+total = df[df$diet=="Both",]$divSIB
+carni = df[df$diet=="Carnivore",]$divSIB
 proportion = carni / total
 
 prop_tsplot(proportion, tit = "Relative Diversity by Diet")
