@@ -266,6 +266,19 @@ source(
   "https://github.com/divDyn/ddPhanero/raw/master/scripts/strat/2019-05-31/ordProcess.R"
 )
 
+library(wordcloud2) 
+
+# have a look to the example dataset
+# head(demoFreq)
+
+# Basic plot
+diet_table = sort(table(dat$diet), decreasing = TRUE)
+diet_table
+log_table = log(diet_table, base = 7)
+log_table
+diet_df = as.data.frame(log_table)
+cloud = wordcloud2(data=diet_df, size=0.4, shuffle = FALSE, color = "random-dark", minSize = 20)
+cloud
 
 ### split data into carnivores and non-carnivores ####
 
