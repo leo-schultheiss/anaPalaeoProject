@@ -1,5 +1,7 @@
 setwd('/home/leo/analytical_palaeobiology_project/')
 df = read.csv('mass_extinction_divDyn.csv')
+df_ammonEx = read.csv('mass_extinction_divDyn_ammonites_not_predators.csv')
+df_triloEx = read.csv('mass_extinction_divDyn_trilobites_not_predators.csv')
 
 ##### log odds analysis #### 
 
@@ -78,12 +80,12 @@ full_tsplot <- function(x = NULL,
 
 ###### diversity rates #####
 full_tsplot(
-  x = allDiv$mid,
+  x = df[df$diet == "Both", ]$mid,
   ys = list(df[df$diet == 'Carnivore', ]$divSIB, df[df$diet == 'Non-Carnivore', ]$divSIB),
   tit = "Diversity",
   ylab = "SIB Diversity",
   ylim = c(0, max(
-    carniDiv$divSIB, nonCarniDiv$divSIB, na.rm = TRUE
+    df[df$diet == "Carnivore", ]$divSIB, df[df$diet == "Non-Carnivore", ]$divSIB, na.rm = TRUE
   ))
 )
 
@@ -91,16 +93,16 @@ full_tsplot(
 prop_tsplot = function(proportion, tit = "Relative Makeup of Diets") {
   full_tsplot(leg = FALSE, tit = tit, ylab = "SIB proportion")
   y_poly = c(proportion, rep(0, length(proportion)))
-  x = c(allDiv$mid, rev(allDiv$mid))
+  x = c(df[df$diet == "Both", ]$mid, rev(df[df$diet == "Both", ]$mid))
   polygon(x, y_poly, col = rgb(1, 0, 0, 0.7), border = NA)
   
   y_poly_inv = c(proportion, rep(1, length(proportion)))
   polygon(x, y_poly_inv, col = rgb(0, 0, 0, 0.7), border = NA)
   abline(v = c(66, 201, 252, 372, 445), col = "white")
   legend(
-    "topleft",
+    "topright",
     bg = "white",
-    legend = c("Carnivores", "other"),
+    legend = c("Carnivore", "Non-Carnivore"),
     title = "Diet",
     col = c(rgb(1, 0, 0), rgb(0, 0, 0)),
     lwd = 2,
@@ -113,38 +115,38 @@ total = df[df$diet=="Both",]$divSIB
 carni = df[df$diet=="Carnivore",]$divSIB
 proportion = carni / total
 
-prop_tsplot(proportion, tit = "Relative Diversity by Diet")
+prop_tsplot(proportion, tit = "Porportion of Diversity by Diet")
 
 
 # exclude ammonites
-total = allDiv$divSIB
+total = df[df$diet == "Both", ]$divSIB
 carni = carniAmmonExDiv$divSIB
 proportion = carni / total
-prop_tsplot(proportion, tit = "Relative Makeup by Diets (Ammonites Counted towards Other)")
+prop_tsplot(proportion, tit = "Proportion of Diversity by Diet (Ammonites not Carnivore)")
 
 # exclude trilobites
-total = allDiv$divSIB
-carni = carniTriloExDiv$divSIB
+total = df[df$diet == "Both", ]$divSIB
+carni = df_triloEx[df_triloEx$diet == "Carnivore", ]$divSIB
 proportion = carni / total
-prop_tsplot(proportion, tit = "Relative Makeup by Diets (Trilobites Counted towards Other)")
+prop_tsplot(proportion, tit = "Proportion of Diversity by Diet (Trilobites not Carnivore)")
 
 
 ##### total extinction rates
 full_tsplot(
-  x = allDiv$mid,
-  ys = list(carniDiv$extPC, nonCarniDiv$extPC),
+  x = df[df$diet == "Both", ]$mid,
+  ys = list(df[df$diet == "Carnivore", ]$extPC, df[df$diet == "Non-Carnivore", ]$extPC),
   tit = "Extinctions",
   ylab = "Foote Metric",
   ylim = c(0, max(
     max(carniAmmonExDiv$extPC, na.rm = TRUE),
     max(noncarniAmmonExDiv$extPC, na.rm = TRUE),
-    max(carniTriloExDiv$extPC, na.rm = TRUE),
-    max(noncarniTriloExDiv$extPC, na.rm = TRUE)
+    max(df_triloEx[df_triloEx$diet == "Carnivore", ]$extPC, na.rm = TRUE),
+    max(nondf_triloEx[df_triloEx$diet == "Carnivore", ]$extPC, na.rm = TRUE)
   ))
 )
 # add ammonite lines
 lines(
-  x = allDiv$mid,
+  x = df[df$diet == "Both", ]$mid,
   y = carniAmmonExDiv$extPC,
   lwd = 2,
   col = carniCol,
@@ -152,7 +154,7 @@ lines(
   lty = 2
 )
 lines(
-  x = allDiv$mid,
+  x = df[df$diet == "Both", ]$mid,
   y = noncarniAmmonExDiv$extPC,
   lwd = 2,
   col = nonCarniCol,
@@ -171,16 +173,16 @@ legend(
 
 # add trilobite lines
 lines(
-  x = allDiv$mid,
-  y = carniTriloExDiv$extPC,
+  x = df[df$diet == "Both", ]$mid,
+  y = df_triloEx[df_triloEx$diet == "Carnivore", ]$extPC,
   lwd = 2,
   col = carniCol,
   type = "l",
   lty = 3
 )
 lines(
-  x = allDiv$mid,
-  y = noncarniTriloExDiv$extPC,
+  x = df[df$diet == "Both", ]$mid,
+  y = nondf_triloEx[df_triloEx$diet == "Carnivore", ]$extPC,
   lwd = 2,
   col = nonCarniCol,
   type = "l",
@@ -201,8 +203,8 @@ legend(
 
 # total corrected
 full_tsplot(
-  x = allDiv$mid,
-  ys = list(carniDiv$ext2f3, nonCarniDiv$ext2f3),
+  x = df[df$diet == "Both", ]$mid,
+  ys = list(df[df$diet == "Carnivore", ]$ext2f3, df[df$diet == "Non-Carnivore", ]$ext2f3),
   tit = "Extinctions",
   ylab = "Foote Metric",
   ylim = c(0, 2)
@@ -210,20 +212,20 @@ full_tsplot(
 
 # relative extinction rates
 full_tsplot(
-  x = allDiv$mid,
-  ys = list(carniDiv$extProp, nonCarniDiv$extProp),
+  x = df[df$diet == "Both", ]$mid,
+  ys = list(df[df$diet == "Carnivore", ]$extProp, df[df$diet == "Non-Carnivore", ]$extProp),
   tit = "Extinctions",
   ylab = "Proportion"
 )
 full_tsplot(
-  x = allDiv$mid,
+  x = df[df$diet == "Both", ]$mid,
   ys = list(carniAmmonExDiv$extProp, noncarniAmmonExDiv$extProp),
   tit = "Extinctions (ammonites counted as non-carnivores)",
   ylab = "Proportion"
 )
 full_tsplot(
-  x = allDiv$mid,
-  ys = list(carniTriloExDiv$extProp, noncarniTriloExDiv$extProp),
+  x = df[df$diet == "Both", ]$mid,
+  ys = list(df_triloEx[df_triloEx$diet == "Carnivore", ]$extProp, nondf_triloEx[df_triloEx$diet == "Carnivore", ]$extProp),
   tit = "Extinctions (ammonites counted as non-carnivores)",
   ylab = "Proportion"
 )
@@ -232,12 +234,12 @@ full_tsplot(
 zscore = function(x) {
   return (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
 }
-carniExtZscore = zscore(carniDiv$extPC)
-nonCarniExtZscore = zscore(nonCarniDiv$extPC)
+carniExtZscore = zscore(df[df$diet == "Carnivore", ]$extPC)
+nonCarniExtZscore = zscore(df[df$diet == "Non-Carnivore", ]$extPC)
 
 # Compare Z-scored values
 full_tsplot(
-  allDiv$mid,
+  df[df$diet == "Both", ]$mid,
   ys = list(carniExtZscore, nonCarniExtZscore),
   ylim = c(-0.5, 1.5),
   tit = "Extinction Rates",
@@ -247,7 +249,7 @@ full_tsplot(
 # difference between zscores
 carniExtDiffZscore = carniExtZscore - nonCarniExtZscore
 full_tsplot(
-  allDiv$mid,
+  df[df$diet == "Both", ]$mid,
   ys = list(carniExtDiffZscore),
   ylim = c(-0.5, 1.5),
   tit = "Difference between Carnivore Extinctions and others",
@@ -404,18 +406,18 @@ tsplot(stages, boxes="sys", shading="series", xlim=4:95, ylim=c(0, 1),
        ylab="two-for-three corrected extinctions")
 abline(v = c(65, 200, 250, 360, 444), col = "black", lty=2, lwd=2)
 
-lines(stages$mid, carniDiv$extPC, lwd=2, col="red")
-lines(stages$mid, nonCarniDiv$extPC, lwd=2, col="blue")
+lines(stages$mid, df[df$diet == "Carnivore", ]$extPC, lwd=2, col="red")
+lines(stages$mid, df[df$diet == "Non-Carnivore", ]$extPC, lwd=2, col="blue")
 legend("topright", inset=c(0.1,0.1), legend=c("Carnivore", "Non-Carnivore"), 
        lwd=2, col=c("red", "blue"), bg="white")
 
 # display selectivity with points
 # select the higher rates
-selIntervals<-cbind(carniDiv$extPC[rs$ext], nonCarniDiv$extPC[rs$ext])
+selIntervals<-cbind(df[df$diet == "Carnivore", ]$extPC[rs$ext], df[df$diet == "Non-Carnivore", ]$extPC[rs$ext])
 groupSelector<-apply(selIntervals, 1, function(w) w[1]>w[2])
 # draw the points
-points(stages$mid[rs$ext[groupSelector]], carniDiv$extPC[rs$ext[groupSelector]],
+points(stages$mid[rs$ext[groupSelector]], df[df$diet == "Carnivore", ]$extPC[rs$ext[groupSelector]],
        pch=16, col="red", cex=2)
-points(stages$mid[rs$ext[!groupSelector]], nonCarniDiv$extPC[rs$ext[!groupSelector]],
+points(stages$mid[rs$ext[!groupSelector]], df[df$diet == "Non-Carnivore", ]$extPC[rs$ext[!groupSelector]],
        pch=16, col="blue", cex=2)
 

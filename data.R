@@ -313,6 +313,7 @@ mass_extinction_stages = c("Katian", "Famennian", "Changhsingian", "Rhaetian", "
 food_mass_extinctions = c("Katian", "Famennian", "Maastrichtian")
 
 allDiv$diet = "Both"
+
 carniDiv$diet = "Carnivore"
 nonCarniDiv$diet = "Non-Carnivore"
 df = rbind(allDiv, carniDiv, nonCarniDiv)
@@ -320,4 +321,24 @@ df = df %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
 df = df %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
 
 write.csv(df, "mass_extinction_divDyn.csv", row.names=FALSE, quote=FALSE)
+
+carniAmmonExDiv$diet = "Carnivore"
+noncarniAmmonExDiv$diet = "Non-Carnivore"
+df_ammonEx = rbind(allDiv, carniAmmonExDiv, noncarniAmmonExDiv)
+df_ammonEx = df_ammonEx %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
+df_ammonEx = df_ammonEx %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
+
+write.csv(df_ammonEx, "mass_extinction_divDyn_ammonites_not_predators.csv", row.names=FALSE, quote=FALSE)
+
+
+carniTriloExDiv$diet = "Carnivore"
+noncarniTriloExDiv$diet = "Non-Carnivore"
+df_triloEx = rbind(allDiv, carniTriloExDiv, noncarniTriloExDiv)
+df_triloEx = df_triloEx %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
+df_triloEx = df_triloEx %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
+
+write.csv(df_triloEx, "mass_extinction_divDyn_trilobites_not_predators.csv", row.names=FALSE, quote=FALSE)
+
+
+
 
