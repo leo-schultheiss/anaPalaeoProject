@@ -9,6 +9,12 @@ carnivores$group = "carnivore"
 nonCarnivores$group = "non-carnivore"
 grouped_df = rbind(carnivores, nonCarnivores)
 
+accentCol = "#D1CCF0"
+carniCol = "#EB4E46"
+nonCarniCol = "black"
+massextinctionCol = "#345EEB"
+
+
 ##### display carnivore types #####
 
 library(ggplot2)
@@ -18,7 +24,7 @@ carniPhyla = sort(carniPhyla)
 carniPhyla = as.data.frame(carniPhyla)
 
 p = ggplot(data=carniPhyla, aes(x=Var1, y=Freq)) +
-  geom_bar(stat="identity", fill="#D1CCF0") +
+  geom_bar(stat="identity", fill=accentCol) +
   scale_y_log10() +
   geom_text(
     aes(label = Freq), 
@@ -44,7 +50,7 @@ carniClass = sort(carniClass)
 carniClass = as.data.frame(carniClass)
 
 p = ggplot(data=carniClass, aes(x=Var1, y=Freq)) +
-  geom_bar(stat="identity", fill="#D1CCF0") +
+  geom_bar(stat="identity", fill=accentCol) +
   scale_y_log10() +
   geom_text(
     aes(label = Freq), 
@@ -86,7 +92,8 @@ full_tsplot <- function(x = NULL,
                         leg = TRUE,
                         legend_pos = "topright",
                         legend_inset = c(0.05, 0.05),
-                        tit = "Diversity",
+                        tit = NA,
+                        sub = NA,
                         lgnd_title = "Diet") {
   # Plot the tsplot background
   tsplot(
@@ -96,7 +103,7 @@ full_tsplot <- function(x = NULL,
     xlim = xlim,
     ylim = ylim,
     ylab = ylab,
-    shading.col = c(NA, "#D1CCF0"),plot.args = list(bg=NA)
+    shading.col = c(NA, accentCol),plot.args = list(bg=NA)
   )
   
   # Add the lines
@@ -127,7 +134,7 @@ full_tsplot <- function(x = NULL,
   }
   
   # Add title
-  title(tit)
+  title(tit, sub = sub)
 }
 
 
@@ -160,22 +167,28 @@ full_tsplot(
 )
 
 # Total SIB diversity compared with carni diversity
-prop_tsplot = function(proportion, tit = "Relative Makeup of Diets") {
-  full_tsplot(leg = FALSE, tit = tit, ylab = "SIB proportion")
+prop_tsplot = function(proportion, tit = "Relative Makeup of Diets", sub= NA, inverse = FALSE) {
+  full_tsplot(leg = FALSE, tit = tit, sub = sub, ylab = "SIB proportion")
   y_poly = c(proportion, rep(0, length(proportion)))
   x = c(df[df$diet == "Both", ]$mid, rev(df[df$diet == "Both", ]$mid))
   polygon(x, y_poly, col = rgb(1, 0, 0, 0.7), border = NA)
+  fill = c(carniCol)
+  legend = c("Carnivore")
   
-  y_poly_inv = c(proportion, rep(1, length(proportion)))
-  polygon(x, y_poly_inv, col = rgb(0, 0, 0, 0.7), border = NA)
+  if (inverse) {
+    y_poly_inv = c(proportion, rep(1, length(proportion)))
+    polygon(x, y_poly_inv, col = rgb(0, 0, 0, 0.7), border = NA)
+    fill = c(carniCol, nonCarniCol)
+    legend = c("Carnivore", "Non-Carnivore")
+  }
+    
   abline(v = c(66, 201, 252, 372, 445), col = "white")
   legend(
     "topright",
     bg = "white",
-    legend = c("Carnivore", "Non-Carnivore"),
+    legend =  legend,
     title = "Diet",
-    col = c(rgb(1, 0, 0), rgb(0, 0, 0)),
-    lwd = 2,
+    fill = fill,
     inset = c(0.05, 0.05),
   )
   
@@ -192,14 +205,15 @@ save_plot("propDiv.png")
 total = df[df$diet == "Both", ]$divSIB
 carni = df_triloEx[df_triloEx$diet == "Carnivore", ]$divSIB
 proportion = carni / total
-prop_tsplot(proportion, tit = "Proportion of Diversity by Diet (Trilobites Non-Carnivore)")
+prop_tsplot(proportion, tit = "Proportion of Diversity by Diet", sub= "Trilobites counted as Non-Carnivore")
 save_plot("propDivTrilo.png")
 
 # exclude ammonites
 total = df[df$diet == "Both", ]$divSIB
 carni = df_cephaEx[df_cephaEx$diet == "Carnivore", ]$divSIB
 proportion = carni / total
-prop_tsplot(proportion, tit = "Proportion of Diversity by Diet (Cephalopods Non-Carnivore)")
+prop_tsplot(proportion, tit = "Proportion of Diversity by Diet", sub=" Cephalopods counted as Non-Carnivore")
+
 save_plot("propDivCeph.png")
 
 
@@ -223,8 +237,7 @@ rs
 # extinction rate plot
 carnivore_extPC = df[df$diet == "Carnivore", ]$extPC
 nonCarnivore_extPC = df[df$diet == "Non-Carnivore", ]$extPC
-full_tsplot(stages$mid, ys = list(carnivore_extPC, nonCarnivore_extPC), ylim = c(0, 1.2), ylab = "Per Capita Extinction Rate", tit = "Rate Split Extinctions")
-
+full_tsplot(stages$mid, ys = list(carnivore_extPC, nonCarnivore_extPC), ylim = c(0, 1.2), ylab = "Per Capita Extinction Rate", tit = "Rate Split Extinctions", leg = FALSE)
 
 # display selectivity with points
 # select the higher rates
@@ -232,42 +245,33 @@ selIntervals<-cbind(df[df$diet == "Carnivore", ]$extPC[rs$ext], df[df$diet == "N
 groupSelector<-apply(selIntervals, 1, function(w) w[1]>w[2])
 # draw the points
 points(stages$mid[rs$ext[groupSelector]], carnivore_extPC[rs$ext[groupSelector]],
-       pch=16, col="red", cex=2)
+       pch=16, col=carniCol, cex=2)
 points(stages$mid[rs$ext[!groupSelector]], nonCarnivore_extPC[rs$ext[!groupSelector]],
-       pch=16, col="blue", cex=2)
+       pch=16, col="black", cex=2)
+legend("topright", bg = "white", legend =  c("Carnivores", "Non-Carnivores", "Split Meaningful", "Split Meaningful"),
+  #title = "Diet",
+  lwd = c(2, 2),
+  col = c(carniCol, "black", carniCol, "black"),
+  lty = c(1, 1, 0, 0),
+  pch = c(NA,NA, 16, 16),
+  inset = c(0.05, 0.05),
+)
 
 save_plot("extinctions_highlight.png", plot_wdth = 1000)
 
 
-
-
-# zscored extinction rates (raw data, foote metric, since biases don't matter for this analysis)
-zscore = function(x) {
-  return (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
-}
-carniExtZscore = zscore(df[df$diet == "Carnivore", ]$extPC)
-nonCarniExtZscore = zscore(df[df$diet == "Non-Carnivore", ]$extPC)
-
-# Compare Z-scored values
+#### Difference #####
 full_tsplot(
   df[df$diet == "Both", ]$mid,
-  ys = list(carniExtZscore, nonCarniExtZscore),
-  ylim = c(-0.5, 1.5),
-  tit = "Extinction Rates",
-  ylab = "Foote Metric (Z-Scored)"
-)
-
-# difference between zscores
-carniExtDiffZscore = carniExtZscore - nonCarniExtZscore
-full_tsplot(
-  df[df$diet == "Both", ]$mid,
-  ys = list(carniExtDiffZscore),
-  ylim = c(-0.5, 1.5),
-  tit = "Difference between Carnivore Extinctions and others",
-  ylab = "Foote Metric (Z-Scored)",
-  cols = c("brown1"),
+  ys = list(df[df$diet == "Carnivore", ]$extPC - df[df$diet == "Non-Carnivore", ]$extPC),
+  ylim = c(-.5, 1),
+  tit = "Difference between Extinction rates",
+  ylab = "Per Capita Extinction Rate",
+  cols = c("black"),
+  lgnd_title = NULL,
   labels = c("Carnivores - Non-Carnivores")
 )
+save_plot("difference_extinction.png", plot_wdth = 1000)
 
 
 ###### Analyzing extinction rates ########
@@ -300,7 +304,7 @@ p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinc
     step_increase = 0.1,
     xmin = 0.8,
     xmax = 1.8,
-    annotation = paste0(signif(median_diff, digits = 2),"*** (Wilcox, p=", signif(non_ext_pvalue, digits = 2) , ")")
+    annotation = paste0("*** (Wilcox, p=", signif(non_ext_pvalue, digits = 2) , ")")
   ) +
   geom_signif(
     y_position = 1.4,
@@ -309,7 +313,7 @@ p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinc
     xmax = 2.2,
     annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 2), ")")
   ) +
-  scale_color_manual(values = c("black", "red")) +
+  scale_color_manual(values = c("black", massextinctionCol)) +
   theme(panel.background = element_rect(fill = "transparent"),
         plot.background = element_rect(fill = "transparent"),
         legend.background = element_rect(fill = "transparent"),  # Transparent legend background
@@ -321,7 +325,7 @@ p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinc
     color = "Mass Extinction"
   )
 p
-ggsave("mass_extinction_box.png", plot = p, bg = "transparent")
+ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1100, height = 900)
 
 
 ##### Permutation testing #######
@@ -348,7 +352,7 @@ length(p_values[p_values < 0.05])
 p_lower_bound = quantile(p_values, probs=c(0.025))
 p_upper_bound = quantile(p_values, probs=c(0.975))
 
-ggplot(df, aes(x = diet, y = extPC, colour = mass_extinction)) +
+p = ggplot(df, aes(x = diet, y = extPC, colour = mass_extinction)) +
   geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
   geom_jitter(aes(color = mass_extinction, stroke = 1),
               position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
@@ -367,7 +371,7 @@ ggplot(df, aes(x = diet, y = extPC, colour = mass_extinction)) +
     xmax = 2.2,
     annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 3), ")")
   ) +
-  scale_color_manual(values = c("black","red")) +
+  scale_color_manual(values = c("black",massextinctionCol)) +
   theme_minimal() +
   labs(
     title = "Extinction rates of Carnivores and Non-Carnivores, Subsampled",
@@ -375,13 +379,15 @@ ggplot(df, aes(x = diet, y = extPC, colour = mass_extinction)) +
     y = "Second-for-Third Corrected Extinction Rate",
     color = "Mass Extinction"
   )
+p
+ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1100, height = 900)
 
 
 #### food shortage #####
 food_ext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, alternative = "two.sided")[3]$p.value
 
 
-ggplot(df[df$diet != "Both", ], aes(x = diet, y = extPC, colour = food_mass_extinction)) +
+p = ggplot(df[df$diet != "Both", ], aes(x = diet, y = extPC, colour = food_mass_extinction)) +
   geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
   geom_jitter(aes(color = food_mass_extinction, stroke = 1),
               position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
@@ -400,7 +406,7 @@ ggplot(df[df$diet != "Both", ], aes(x = diet, y = extPC, colour = food_mass_exti
     xmax = 2.2,
     annotation = paste0("NS (Wilcox, p=", signif(food_ext_pvalue, digits = 3), ")")
   ) +
-  scale_color_manual(values = c("black","red")) +
+  scale_color_manual(values = c("black",massextinctionCol)) +
   theme_minimal() +
   labs(
     title = "Extinction rates of Carnivores and Non-Carnivores, Subsampled",
@@ -408,3 +414,6 @@ ggplot(df[df$diet != "Both", ], aes(x = diet, y = extPC, colour = food_mass_exti
     y = "Raw per Capita Extinction Rate",
     color = "Food Mass Extinction"
   )
+p
+ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1100, height = 900)
+
