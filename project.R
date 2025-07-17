@@ -292,12 +292,18 @@ nonCarniNoExt_value = df[df$mass_extinction == FALSE & df$diet == "Non-Carnivore
 
 non_ext_pvalue = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative =
                                "two.sided")[3]$p.value
-median_diff = median(df[df$diet == "Carnivore",]$extPC, na.rm=TRUE) - median(df[df$diet == "Non-Carnivore",]$extPC, na.rm = TRUE)
 
+carniExtMedian = median(df[df$diet == "Carnivore" & df$mass_extinction == TRUE, ]$extPC, na.rm= TRUE)
+nonCarniExtMedian = median(df[df$diet == "Non-Carnivore" & df$mass_extinction == TRUE, ]$extPC, na.rm= TRUE)
+carniExtMedian - nonCarniNoExtMedian
+
+carniNoExtMedian = median(df[df$diet == "Carnivore" & df$mass_extinction == FALSE, ]$extPC, na.rm= TRUE)
+nonCarniNoExtMedian = median(df[df$diet == "Non-Carnivore" & df$mass_extinction == FALSE, ]$extPC, na.rm= TRUE)
+carniNoExtMedian - nonCarniNoExtMedian
 
 p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinction)) +
   geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = mass_extinction, stroke = 1),
+  geom_jitter(aes(color = mass_extinction, stroke = 0.5),
               position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
   geom_signif(
     y_position = 1.55,
@@ -317,7 +323,9 @@ p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinc
   theme(panel.background = element_rect(fill = "transparent"),
         plot.background = element_rect(fill = "transparent"),
         legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"))  +
+        legend.box.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())  +
   labs(
     title = "Extinction Rates in and out of Mass Extinctions",
     x = "Diet",
@@ -325,7 +333,7 @@ p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinc
     color = "Mass Extinction"
   )
 p
-ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1100, height = 900)
+ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1500, height = 1400)
 
 
 ##### Permutation testing #######
