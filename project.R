@@ -3,18 +3,69 @@ df = read.csv('mass_extinction_divDyn.csv')
 df_cephaEx = read.csv('mass_extinction_divDyn_cephalopoda_not_predators.csv')
 df_triloEx = read.csv('mass_extinction_divDyn_trilobites_not_predators.csv')
 
-##### log odds analysis #### 
+carnivores = read.csv("carnivores.csv")
+nonCarnivores = read.csv("non-carnivores.csv")
+carnivores$group = "carnivore"
+nonCarnivores$group = "non-carnivore"
+grouped_df = rbind(carnivores, nonCarnivores)
 
-logOdds = function(a, b) {
-  log(sum(a, na.rm = TRUE) / sum(b, na.rm = TRUE))
-}
+##### display carnivore types #####
+
+library(ggplot2)
+
+carniPhyla = table(carnivores$phylum)
+carniPhyla = sort(carniPhyla)
+carniPhyla = as.data.frame(carniPhyla)
+
+p = ggplot(data=carniPhyla, aes(x=Var1, y=Freq)) +
+  geom_bar(stat="identity", fill="#D1CCF0") +
+  scale_y_log10() +
+  geom_text(
+    aes(label = Freq), 
+    hjust = 1, nudge_y = -.1
+  ) +
+  
+  coord_flip() +
+  theme(panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(
+    title = "Phyla of Carnivores",
+    x = "Phylum",
+    y = "Fossil Count"
+  )
+p
+ggsave("carnivores_phlyum_bar.png", plot = p, bg = "transparent", units="px", width = 1100, height = 900)
 
 
-logOdds(df[df$diet == "Carnivore" & df$mass_extinction == TRUE, ]$extPC, df[df$diet == "Non-Carnivore" & df$mass_extinction == TRUE, ]$extPC)
-logOdds(df[df$diet == "Carnivore" & df$mass_extinction == FALSE, ]$extPC, df[df$diet == "Non-Carnivore" & df$mass_extinction == FALSE, ]$extPC)
+carniClass = table(carnivores$class)
+carniClass = sort(carniClass)
+carniClass = as.data.frame(carniClass)
+
+p = ggplot(data=carniClass, aes(x=Var1, y=Freq)) +
+  geom_bar(stat="identity", fill="#D1CCF0") +
+  scale_y_log10() +
+  geom_text(
+    aes(label = Freq), 
+    hjust = 1, nudge_y = -.1
+  ) +
+  
+  coord_flip() +
+  theme(panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(
+    title = "Classes of Carnivores",
+    x = "Class",
+    y = "Fossil Count"
+  )
+p
+ggsave("carnivores_class_bar.png", plot = p, bg = "transparent", units="px", width = 1500, height = 1200)
 
 
-########
+######## Time series diversitFreq######## Time series diversity & extinction ####
 
 carniCol = "brown1"
 nonCarniCol = "black"
@@ -166,11 +217,6 @@ save_plot("extinction.png", plot_wdth = 1000)
 ######## rate splitting #########
 # use ratesplit method to determine significant difference between carnivore and non-carnivore extinction rate across all bins
 
-carnivores = read.csv("carnivores.csv")
-nonCarnivores = read.csv("non-carnivores.csv")
-carnivores$group = "carnivore"
-nonCarnivores$group = "non-carnivore"
-grouped_df = rbind(carnivores, nonCarnivores)
 rs = ratesplit(grouped_df, sel="group", tax="genus", bin="stg")
 rs
 
@@ -245,34 +291,38 @@ non_ext_pvalue = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative 
 median_diff = median(df[df$diet == "Carnivore",]$extPC, na.rm=TRUE) - median(df[df$diet == "Non-Carnivore",]$extPC, na.rm = TRUE)
 
 
-ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinction)) +
+p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinction)) +
   geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
   geom_jitter(aes(color = mass_extinction, stroke = 1),
               position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
   geom_signif(
-    y_position = 1.5,
+    y_position = 1.55,
     step_increase = 0.1,
     xmin = 0.8,
     xmax = 1.8,
-    annotation = paste0(signif(median_diff, digits = 3),"*** (Wilcox, p=", signif(non_ext_pvalue, digits = 3) , ")")
+    annotation = paste0(signif(median_diff, digits = 2),"*** (Wilcox, p=", signif(non_ext_pvalue, digits = 2) , ")")
   ) +
   geom_signif(
-    y_position = 1.35,
+    y_position = 1.4,
     step_increase = 0.1,
     xmin = 1.2,
     xmax = 2.2,
-    annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 3), ")")
+    annotation = paste0("NS (Wilcox, p=", signif(ext_pvalue, digits = 2), ")")
   ) +
   scale_color_manual(values = c("black", "red")) +
   theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"), ) +
+        plot.background = element_rect(fill = "transparent"),
+        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
+        legend.box.background = element_rect(fill = "transparent"))  +
   labs(
-    title = "Extinction Rates of Carnivores and Non-Carnivores",
+    title = "Extinction Rates in and out of Mass Extinctions",
     x = "Diet",
     y = "Per Capita Extinction Rate",
     color = "Mass Extinction"
   )
+p
 ggsave("mass_extinction_box.png", plot = p, bg = "transparent")
+
 
 ##### Permutation testing #######
 

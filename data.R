@@ -292,14 +292,14 @@ write.csv(nonCarnivores, "non-carnivores.csv")
 
 
 #### what phyla do the samples belong to?####
-par(mar = c(4, 11, 4, 4))
+old_par = par(mar = c(4, 11, 4, 4))
 barplot(sort(table(carnivores$phylum), decreasing = TRUE),
         las = 2,
         horiz = TRUE)
 barplot(sort(table(nonCarnivores$phylum), decreasing = TRUE),
         las = 2,
         horiz = TRUE)
-par(mar = c(4, 4, 4, 4))
+par(old_par)
 
 # ammonites make up much of the carnivores after the triassic
 carnivores_ammoniteEx = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
