@@ -289,8 +289,6 @@ nonCarnivores = dat[dat$diet != 'carnivore', ]
 write.csv(carnivores, "carnivores.csv")
 write.csv(nonCarnivores, "non-carnivores.csv")
 
-
-
 #### what phyla do the samples belong to?####
 old_par = par(mar = c(4, 11, 4, 4))
 barplot(sort(table(carnivores$phylum), decreasing = TRUE),
@@ -301,13 +299,16 @@ barplot(sort(table(nonCarnivores$phylum), decreasing = TRUE),
         horiz = TRUE)
 par(old_par)
 
+
+#### add datasets for looking at ammonites and trilobites differently ####
+
 # ammonites make up much of the carnivores after the triassic
-carnivores_ammoniteEx = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
-nonCarnivores_ammoniteEx = dat[dat$diet != 'carnivore' | dat$class == "Cephalopoda", ]
+carnivoresAmmoniteNon = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
+nonCarnivoresAmmoniteNon = dat[dat$diet != 'carnivore' | dat$class == "Cephalopoda", ]
 
 # trilobites account for most predators in the cambrium
-carnivores_trilobiteEx = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
-nonCarnivores_trilobiteEx = dat[dat$class == "Trilobita", ]
+carnivoresTrilobiteNon = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
+nonCarnivoresTrilobiteNon = dat[dat$diet != 'carnivore' | dat$class == "Trilobita", ]
 
 # cephalopoda make up much of the predators in the early triassic
 trias_carnivores = dat[dat$max_ma < 250 & dat$min_ma > 200 & dat$diet == 'carnivore', ]
@@ -325,41 +326,42 @@ allDiv = divStg(dat)
 carniDiv = divStg(carnivores)
 nonCarniDiv = divStg(nonCarnivores)
 
-carniCephaExDiv = divStg(carnivores_ammoniteEx)
-noncarniCephaExDiv = divStg(nonCarnivores_ammoniteEx)
+carniCephaNonDiv = divStg(carnivoresAmmoniteNon)
+noncarniCephaNonDiv = divStg(nonCarnivoresAmmoniteNon)
 
-carniTriloExDiv = divStg(carnivores_trilobiteEx)
-noncarniTriloExDiv = divStg(nonCarnivores_trilobiteEx)
+carniTriloNonDiv = divStg(carnivoresTrilobiteNon)
+noncarniTriloNonDiv = divStg(nonCarnivoresTrilobiteNon)
 
 
 library(dplyr)
 mass_extinction_stages = c("Katian", "Famennian", "Changhsingian", "Rhaetian", "Maastrichtian")
 food_mass_extinctions = c("Katian", "Famennian", "Maastrichtian")
+exclude_end_permian = c("Katian", "Famennian", "Rhaetian", "Maastrichtian")
+addExtinctions = function(dframe) {
+  dframe = dframe %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
+  dframe = dframe %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
+  dframe = dframe %>% mutate(me_no_perm = stage %in% exclude_end_permian)
+  dframe
+}
 
 allDiv$diet = "Both"
 
 carniDiv$diet = "Carnivore"
 nonCarniDiv$diet = "Non-Carnivore"
 df = rbind(allDiv, carniDiv, nonCarniDiv)
-df = df %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
-df = df %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
-
+df = addExtinctions(df)
 write.csv(df, "mass_extinction_divDyn.csv", row.names=FALSE, quote=FALSE)
 
-carniCephaExDiv$diet = "Carnivore"
-noncarniCephaExDiv$diet = "Non-Carnivore"
-df_cephaEx = rbind(allDiv, carniCephaExDiv, noncarniCephaExDiv)
-df_cephaEx = df_cephaEx %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
-df_cephaEx = df_cephaEx %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
-
+carniCephaNonDiv$diet = "Carnivore"
+noncarniCephaNonDiv$diet = "Non-Carnivore"
+df_cephaEx = rbind(allDiv, carniCephaNonDiv, noncarniCephaNonDiv)
+df_cephaEx = addExtinctions(df_cephaEx)
 write.csv(df_cephaEx, "mass_extinction_divDyn_cephalopoda_not_predators.csv", row.names=FALSE, quote=FALSE)
 
 
-carniTriloExDiv$diet = "Carnivore"
-noncarniTriloExDiv$diet = "Non-Carnivore"
-df_triloEx = rbind(allDiv, carniTriloExDiv, noncarniTriloExDiv)
-df_triloEx = df_triloEx %>% mutate(mass_extinction = stage %in% mass_extinction_stages)
-df_triloEx = df_triloEx %>% mutate(food_mass_extinction = stage %in% food_mass_extinctions)
-
+carniTriloNonDiv$diet = "Carnivore"
+noncarniTriloNonDiv$diet = "Non-Carnivore"
+df_triloEx = rbind(allDiv, carniTriloNonDiv, noncarniTriloNonDiv)
+df_triloEx = addExtinctions(df_triloEx)
 write.csv(df_triloEx, "mass_extinction_divDyn_trilobites_not_predators.csv", row.names=FALSE, quote=FALSE)
 
