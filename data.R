@@ -302,13 +302,20 @@ par(old_par)
 
 #### add datasets for looking at ammonites and trilobites differently ####
 
-# ammonites make up much of the carnivores after the triassic
-carnivoresAmmoniteNon = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
-nonCarnivoresAmmoniteNon = dat[dat$diet != 'carnivore' | dat$class == "Cephalopoda", ]
 
 # trilobites account for most predators in the cambrium
 carnivoresTrilobiteNon = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
 nonCarnivoresTrilobiteNon = dat[dat$diet != 'carnivore' | dat$class == "Trilobita", ]
+carnivoresTrilobiteEx = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
+nonCarnivoresTrilobiteEx = dat[dat$diet != 'carnivore' & dat$class != "Trilobita", ]
+
+
+# ammonites make up much of the carnivores after the triassic
+carnivoresCephaNon = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
+nonCarnivoresCephaNon = dat[dat$diet != 'carnivore' | dat$class == "Cephalopoda", ]
+
+carnivoresCephaEx = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
+nonCarnivoresCephaEx = dat[dat$diet != 'carnivore' & dat$class != "Cephalopoda", ]
 
 # cephalopoda make up much of the predators in the early triassic
 trias_carnivores = dat[dat$max_ma < 250 & dat$min_ma > 200 & dat$diet == 'carnivore', ]
@@ -326,11 +333,16 @@ allDiv = divStg(dat)
 carniDiv = divStg(carnivores)
 nonCarniDiv = divStg(nonCarnivores)
 
-carniCephaNonDiv = divStg(carnivoresAmmoniteNon)
-noncarniCephaNonDiv = divStg(nonCarnivoresAmmoniteNon)
-
 carniTriloNonDiv = divStg(carnivoresTrilobiteNon)
 noncarniTriloNonDiv = divStg(nonCarnivoresTrilobiteNon)
+carniTriloExDiv = divStg(carnivoresTrilobiteEx)
+nonCarniTriloExDiv = divStg(nonCarnivoresTrilobiteEx)
+
+carniCephaNonDiv = divStg(carnivoresCephaNon)
+noncarniCephaNonDiv = divStg(nonCarnivoresCephaNon)
+carniCephaExDiv = divStg(carnivoresCephaEx)
+nonCarniCephaExDiv = divStg(nonCarnivoresCephaEx)
+
 
 
 library(dplyr)
@@ -354,14 +366,27 @@ write.csv(df, "mass_extinction_divDyn.csv", row.names=FALSE, quote=FALSE)
 
 carniCephaNonDiv$diet = "Carnivore"
 noncarniCephaNonDiv$diet = "Non-Carnivore"
-df_cephaEx = rbind(allDiv, carniCephaNonDiv, noncarniCephaNonDiv)
-df_cephaEx = addExtinctions(df_cephaEx)
-write.csv(df_cephaEx, "mass_extinction_divDyn_cephalopoda_not_predators.csv", row.names=FALSE, quote=FALSE)
+dfCephaNon = rbind(allDiv, carniCephaNonDiv, noncarniCephaNonDiv)
+dfCephaNon = addExtinctions(dfCephaNon)
+write.csv(dfCephaNon, "mass_extinction_divDyn_cephalopoda_not_predators.csv", row.names=FALSE, quote=FALSE)
+
+carniCephaExDiv$diet = "Carnivore"
+nonCarniCephaExDiv$diet = "Non-Carnivore"
+dfCephaEx = rbind(allDiv, carniCephaExDiv, nonCarniCephaExDiv)
+dfCephaEx = addExtinctions(dfCephaEx)
+write.csv(dfCephaEx, "mass_extinction_divDyn_cephalopoda_removed.csv", row.names=FALSE, quote=FALSE)
 
 
 carniTriloNonDiv$diet = "Carnivore"
 noncarniTriloNonDiv$diet = "Non-Carnivore"
-df_triloEx = rbind(allDiv, carniTriloNonDiv, noncarniTriloNonDiv)
-df_triloEx = addExtinctions(df_triloEx)
-write.csv(df_triloEx, "mass_extinction_divDyn_trilobites_not_predators.csv", row.names=FALSE, quote=FALSE)
+dfTriloNon = rbind(allDiv, carniTriloNonDiv, noncarniTriloNonDiv)
+dfTriloNon = addExtinctions(dfTriloNon)
+write.csv(dfTriloNon, "mass_extinction_divDyn_trilobites_not_predators.csv", row.names=FALSE, quote=FALSE)
+
+
+carniTriloExDiv$diet = "Carnivore"
+nonCarniTriloExDiv$diet = "Non-Carnivore"
+dfTriloEx = rbind(allDiv, carniTriloExDiv, nonCarniTriloExDiv)
+dfTriloEx = addExtinctions(dfTriloEx)
+write.csv(dfTriloEx, "mass_extinction_divDyn_trilobites_removed.csv", row.names=FALSE, quote=FALSE)
 
