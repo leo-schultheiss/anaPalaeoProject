@@ -301,6 +301,12 @@ save_plot("difference_extinction_highlight.png", plot_wdth = 1000)
 
 
 ###### Analyzing extinction rates ########
+#check normality
+qqnorm(df[df$diet=="Both",]$extPC)
+qqline(df[df$diet=="Both",]$extPC)
+shapiro.test(df[df$diet=="Both",]$extPC)
+ks.test(df[df$diet == "Both", ]$extPC, 'pnorm')
+# > not normally distributed
 
 library(ggplot2)
 library(ggsignif)
@@ -319,7 +325,7 @@ p_to_sig <- function(p_value) {
   }
 }
 
-sigboxplot = function(dframe, extinction_var, title, filename, significance = TRUE) {
+sigboxplot = function(dframe, extinction_var, title, filename, subtitle = NULL, significance = TRUE) {
   carniExt_value = dframe[dframe[[extinction_var]] == TRUE & dframe$diet == "Carnivore", ]$extPC
   nonCarniExt_value = dframe[dframe[[extinction_var]] == TRUE & dframe$diet == "Non-Carnivore", ]$extPC
   extTest = wilcox.test(carniExt_value, nonCarniExt_value, alternative = "greater")
@@ -348,6 +354,7 @@ sigboxplot = function(dframe, extinction_var, title, filename, significance = TR
           panel.grid.minor = element_blank())  +
     labs(
       title = title,
+      subtitle = subtitle,
       x = "Diet",
       y = "Per Capita Extinction Rate",
       color = "Mass Extinction"
@@ -381,10 +388,10 @@ sigboxplot(df, "mass_extinction", "Extinction Rates in and out of Mass Extinctio
 #### check if cephalopods or trilobites throw the analysis off #####
 
 # trilobites
-sigboxplot(dframe = dfTriloEx, extinction_var = "mass_extinction", title = "Extinction Rates in and out of Mass Extinctions (Excluding Trilobites)", filename = "mass_extinction_box_ex_trilo.png")
+sigboxplot(dframe = dfTriloEx, extinction_var = "mass_extinction", title = "Extinction Rates in and out of Mass Extinctions", subtitle =  "Excluding Trilobites", filename = "mass_extinction_box_ex_trilo.png")
 
 # Cephalopods
-sigboxplot(dfCephaEx, "mass_extinction", "Extinction Rates in and out of Mass Extinctions (Excluding Cephalopods)", "mass_extinction_box_ex_ceph.png")
+sigboxplot(dfCephaEx, "mass_extinction", "Extinction Rates in and out of Mass Extinctions", subtitle = "Excluding Cephalopods", "mass_extinction_box_ex_ceph.png")
 # yes, cephalopods account for most of the impact
 
 ############ earlier tests ####################
