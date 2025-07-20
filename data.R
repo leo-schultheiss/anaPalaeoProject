@@ -309,11 +309,9 @@ nonCarnivoresTrilobiteNon = dat[dat$diet != 'carnivore' | dat$class == "Trilobit
 carnivoresTrilobiteEx = dat[dat$diet == 'carnivore' & dat$class != "Trilobita", ]
 nonCarnivoresTrilobiteEx = dat[dat$diet != 'carnivore' & dat$class != "Trilobita", ]
 
-
 # ammonites make up much of the carnivores after the triassic
 carnivoresCephaNon = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
 nonCarnivoresCephaNon = dat[dat$diet != 'carnivore' | dat$class == "Cephalopoda", ]
-
 carnivoresCephaEx = dat[dat$diet == 'carnivore' & dat$class != "Cephalopoda", ]
 nonCarnivoresCephaEx = dat[dat$diet != 'carnivore' & dat$class != "Cephalopoda", ]
 
@@ -342,7 +340,6 @@ carniCephaNonDiv = divStg(carnivoresCephaNon)
 noncarniCephaNonDiv = divStg(nonCarnivoresCephaNon)
 carniCephaExDiv = divStg(carnivoresCephaEx)
 nonCarniCephaExDiv = divStg(nonCarnivoresCephaEx)
-
 
 
 library(dplyr)

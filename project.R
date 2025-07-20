@@ -1,7 +1,9 @@
 setwd('/home/leo/analytical_palaeobiology_project/')
 df = read.csv('mass_extinction_divDyn.csv')
-df_cephaEx = read.csv('mass_extinction_divDyn_cephalopoda_not_predators.csv')
-df_triloEx = read.csv('mass_extinction_divDyn_trilobites_not_predators.csv')
+dfCephaNon = read.csv('mass_extinction_divDyn_cephalopoda_not_predators.csv')
+dfTriloNon = read.csv('mass_extinction_divDyn_trilobites_not_predators.csv')
+dfCephaEx = read.csv('mass_extinction_divDyn_cephalopoda_removed.csv')
+dfTriloEx = read.csv('mass_extinction_divDyn_trilobites_removed.csv')
 
 carnivores = read.csv("carnivores.csv")
 nonCarnivores = read.csv("non-carnivores.csv")
@@ -22,11 +24,8 @@ carniPhyla = table(carnivores$phylum)
 carniPhyla = sort(carniPhyla)
 carniPhyla = as.data.frame(carniPhyla)
 
-col = c(rep(accentCol, 8), arthropoda, chordata, mollusca)
-col = accentCol
-
 p = ggplot(data=carniPhyla, aes(x=Var1, y=Freq)) +
-  geom_bar(stat="identity", fill=col) +
+  geom_bar(stat="identity", fill=accentCol) +
   scale_y_log10() +
   geom_text(
     aes(label = Freq), 
@@ -199,16 +198,16 @@ save_plot("propDiv.png")
 
 # exclude trilobites
 total = df[df$diet == "Both", ]$divSIB
-carni = df_triloEx[df_triloEx$diet == "Carnivore", ]$divSIB
+carni = dfTriloNon[dfTriloNon$diet == "Carnivore", ]$divSIB
 proportion = carni / total
-prop_tsplot(proportion, tit = "Proportion of Diversity by Diet", sub= "Trilobites counted as Non-Carnivore")
+prop_tsplot(proportion, tit = "Proportion of Diversity by Diet", sub= "Trilobites not counted as Carnivore")
 save_plot("propDivTrilo.png")
 
 # exclude ammonites
 total = df[df$diet == "Both", ]$divSIB
-carni = df_cephaEx[df_cephaEx$diet == "Carnivore", ]$divSIB
+carni = dfCephaNon[dfCephaNon$diet == "Carnivore", ]$divSIB
 proportion = carni / total
-prop_tsplot(proportion, tit = "Proportion of Diversity by Diet", sub=" Cephalopods counted as Non-Carnivore")
+prop_tsplot(proportion, tit = "Proportion of Diversity by Diet", sub=" Cephalopods not counted as Carnivore")
 save_plot("propDivCeph.png")
 
 
@@ -306,246 +305,91 @@ save_plot("difference_extinction_highlight.png", plot_wdth = 1000)
 library(ggplot2)
 library(ggsignif)
 
+p_to_sig <- function(p_value) {
+  if (is.na(p_value)) {
+    return(NA)
+  } else if (p_value < 0.001) {
+    return("***")
+  } else if (p_value < 0.01) {
+    return("**")
+  } else if (p_value < 0.05) {
+    return("*")
+  } else {
+    return("ns")
+  }
+}
 
-comparisons = list(c("Carnivore", "Non-Carnivore"))
+sigboxplot = function(dframe, extinction_var, title, filename, significance = TRUE) {
+  carniExt_value = dframe[dframe[[extinction_var]] == TRUE & dframe$diet == "Carnivore", ]$extPC
+  nonCarniExt_value = dframe[dframe[[extinction_var]] == TRUE & dframe$diet == "Non-Carnivore", ]$extPC
+  extTest = wilcox.test(carniExt_value, nonCarniExt_value, alternative = "greater")
+  extTest
+  ext_pvalue = extTest[3]$p.value
+  median(carniExt_value, na.rm = TRUE) - median(nonCarniExt_value, na.rm = TRUE)
+  
+  carniNoExt_value = dframe[dframe[[extinction_var]] == FALSE & dframe$diet == "Carnivore", ]$extPC
+  nonCarniNoExt_value = dframe[dframe[[extinction_var]] == FALSE & dframe$diet == "Non-Carnivore", ]$extPC
+  
+  nonExtTest = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative = "greater")
+  nonExtTest
+  non_ext_pvalue = nonExtTest[3]$p.value
+  
+  set.seed(42)
+  p = ggplot(dframe[dframe$diet != "Both",], aes_string(x = "diet", y = "extPC", colour = extinction_var)) +
+    geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
+    geom_jitter(aes_string(color = extinction_var, stroke = 0.5),
+                position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
+    scale_color_manual(values = c("black", massextinctionCol)) +
+    theme(panel.background = element_rect(fill = "transparent"),
+          plot.background = element_rect(fill = "transparent"),
+          legend.background = element_rect(fill = "transparent"),  # Transparent legend background
+          legend.box.background = element_rect(fill = "transparent"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())  +
+    labs(
+      title = title,
+      x = "Diet",
+      y = "Per Capita Extinction Rate",
+      color = "Mass Extinction"
+    )
+  
+  if (significance) {
+    p = p +
+      geom_signif(
+        y_position = 1.55,
+        step_increase = 0.1,
+        xmin = 0.8,
+        xmax = 1.8,
+        annotation = paste0(p_to_sig(non_ext_pvalue), " (p=", signif(non_ext_pvalue, digits = 2) , ")")
+      ) +
+      geom_signif(
+        y_position = 1.4,
+        step_increase = 0.1,
+        xmin = 1.2,
+        xmax = 2.2,
+        annotation = paste0(p_to_sig(ext_pvalue)," (p=", signif(ext_pvalue, digits = 2), ")")
+      )
+  }
+  ggsave(filename, plot = p, bg = "transparent", units="px", width = 1500, height = 1400)
+  p
+}
 
-carniExt_value = df[df$mass_extinction == TRUE & df$diet == "Carnivore", ]$extPC
-nonCarniExt_value = df[df$mass_extinction == TRUE & df$diet == "Non-Carnivore", ]$extPC
-ext_pvalue = wilcox.test(carniExt_value, nonCarniExt_value, alternative =
-                           "two.sided")[3]$p.value
-
-carniNoExt_value = df[df$mass_extinction == FALSE & df$diet == "Carnivore", ]$extPC
-nonCarniNoExt_value = df[df$mass_extinction == FALSE & df$diet == "Non-Carnivore", ]$extPC
-
-nonExtTest = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative =
-                           "two.sided")
-nonExtTest
-non_ext_pvalue = nonExtTest[3]$p.value
-
-carniExtMedian = median(df[df$diet == "Carnivore" & df$mass_extinction == TRUE, ]$extPC, na.rm= TRUE)
-nonCarniExtMedian = median(df[df$diet == "Non-Carnivore" & df$mass_extinction == TRUE, ]$extPC, na.rm= TRUE)
-carniExtMedian - nonCarniExtMedian
-
-carniNoExtMedian = median(df[df$diet == "Carnivore" & df$mass_extinction == FALSE, ]$extPC, na.rm= TRUE)
-nonCarniNoExtMedian = median(df[df$diet == "Non-Carnivore" & df$mass_extinction == FALSE, ]$extPC, na.rm= TRUE)
-carniNoExtMedian - nonCarniNoExtMedian
-
-set.seed(42)
-p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinction)) +
-  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = mass_extinction, stroke = 0.5),
-              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
-  scale_color_manual(values = c("black", massextinctionCol)) +
-  theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"),
-        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())  +
-  labs(
-    title = "Extinction Rates in and out of Mass Extinctions",
-    x = "Diet",
-    y = "Per Capita Extinction Rate",
-    color = "Mass Extinction"
-  )
-p
-ggsave("mass_extinction_box_simple.png", plot = p, bg = "transparent", units="px", width = 1500, height = 1400)
-
-set.seed(42)
-p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinction)) +
-  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = mass_extinction, stroke = 0.5),
-              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
-  geom_signif(
-    y_position = 1.55,
-    step_increase = 0.1,
-    xmin = 0.8,
-    xmax = 1.8,
-    annotation = paste0("*** (p=", signif(non_ext_pvalue, digits = 2) , ")")
-  ) +
-  geom_signif(
-    y_position = 1.4,
-    step_increase = 0.1,
-    xmin = 1.2,
-    xmax = 2.2,
-    annotation = paste0("NS (p=", signif(ext_pvalue, digits = 2), ")")
-  ) +
-  scale_color_manual(values = c("black", massextinctionCol)) +
-  theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"),
-        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())  +
-  labs(
-    title = "Extinction Rates in and out of Mass Extinctions",
-    x = "Diet",
-    y = "Per Capita Extinction Rate",
-    color = "Mass Extinction"
-  )
-p
-ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1500, height = 1400)
-
-
-#### Check if end permian throws us off #####
-
-carniExt_value = df[df$me_no_perm == TRUE & df$diet == "Carnivore", ]$extPC
-nonCarniExt_value = df[df$me_no_perm == TRUE & df$diet == "Non-Carnivore", ]$extPC
-ext_pvalue = wilcox.test(carniExt_value, nonCarniExt_value, alternative =
-                           "two.sided")[3]$p.value
-ext_pvalue
-median(carniExt_value, na.rm = TRUE) - median(nonCarniExt_value, na.rm = TRUE)
-
-carniNoExt_value = df[df$me_no_perm == FALSE & df$diet == "Carnivore", ]$extPC
-nonCarniNoExt_value = df[df$me_no_perm == FALSE & df$diet == "Non-Carnivore", ]$extPC
-
-nonExtTest = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative =
-                           "two.sided")
-nonExtTest
-non_ext_pvalue = nonExtTest[3]$p.value
-
-set.seed(42)
-p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = me_no_perm)) +
-  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = me_no_perm, stroke = 0.5),
-              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
-  geom_signif(
-    y_position = 1.55,
-    step_increase = 0.1,
-    xmin = 0.8,
-    xmax = 1.8,
-    annotation = paste0("*** (p=", signif(non_ext_pvalue, digits = 2) , ")")
-  ) +
-  geom_signif(
-    y_position = 1.4,
-    step_increase = 0.1,
-    xmin = 1.2,
-    xmax = 2.2,
-    annotation = paste0("NS (p=", signif(ext_pvalue, digits = 2), ")")
-  ) +
-  scale_color_manual(values = c("black", massextinctionCol)) +
-  theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"),
-        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())  +
-  labs(
-    title = "Extinction Rates in and out of Mass Extinctions",
-    x = "Diet",
-    y = "Per Capita Extinction Rate",
-    color = "Mass Extinction"
-  )
-p
-ggsave("mass_extinction_box_ex_perm.png", plot = p, bg = "transparent", units="px", width = 1500, height = 1400)
+sigboxplot(df, "mass_extinction", "Extinction Rates in and out of Mass Extinctions", "mass_extinction_box_simple.png", significance = FALSE)
+sigboxplot(df, "mass_extinction", "Extinction Rates in and out of Mass Extinctions", "mass_extinction_box.png", significance = TRUE)
 
 
 #### check if cephalopods or trilobites throw the analysis off #####
-carniExt_value = df_cephaEx[df_cephaEx$mass_extinction == TRUE & df_cephaEx$diet == "Carnivore", ]$extPC
-nonCarniExt_value = df_cephaEx[df_cephaEx$mass_extinction == TRUE & df_cephaEx$diet == "Non-Carnivore", ]$extPC
-extTest = wilcox.test(carniExt_value, nonCarniExt_value, alternative = "two.sided")
-extTest
-ext_pvalue = extTest[3]$p.value
-median(carniExt_value, na.rm = TRUE) - median(nonCarniExt_value, na.rm = TRUE)
-
-carniNoExt_value = df_cephaEx[df_cephaEx$mass_extinction == FALSE & df_cephaEx$diet == "Carnivore", ]$extPC
-nonCarniNoExt_value = df_cephaEx[df_cephaEx$mass_extinction == FALSE & df_cephaEx$diet == "Non-Carnivore", ]$extPC
-
-nonExtTest = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative = "two.sided")
-nonExtTest
-non_ext_pvalue = nonExtTest[3]$p.value
-
-set.seed(42)
-p = ggplot(df_cephaEx[df_cephaEx$diet != "Both",], aes(x = diet, y = extPC, colour = me_no_perm)) +
-  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = me_no_perm, stroke = 0.5),
-              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
-  geom_signif(
-    y_position = 1.55,
-    step_increase = 0.1,
-    xmin = 0.8,
-    xmax = 1.8,
-    annotation = paste0("*** (p=", signif(non_ext_pvalue, digits = 2) , ")")
-  ) +
-  geom_signif(
-    y_position = 1.4,
-    step_increase = 0.1,
-    xmin = 1.2,
-    xmax = 2.2,
-    annotation = paste0("NS (p=", signif(ext_pvalue, digits = 2), ")")
-  ) +
-  scale_color_manual(values = c("black", massextinctionCol)) +
-  theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"),
-        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())  +
-  labs(
-    title = "Extinction Rates in and out of Mass Extinctions (Cephalopods countes as Non-Carnivore)",
-    x = "Diet",
-    y = "Per Capita Extinction Rate",
-    color = "Mass Extinction"
-  )
-p
-ggsave("mass_extinction_box_ex_ceph.png", plot = p, bg = "transparent", units="px", width = 1500, height = 1400)
-
 
 # trilobites
-carniExt_value = df_triloEx[df_triloEx$mass_extinction == TRUE & df_triloEx$diet == "Carnivore", ]$extPC
-nonCarniExt_value = df_triloEx[df_triloEx$mass_extinction == TRUE & df_triloEx$diet == "Non-Carnivore", ]$extPC
-extTest = wilcox.test(carniExt_value, nonCarniExt_value, alternative =
-                        "two.sided")
-extTest
-ext_pvalue = extTest[3]$p.value
-median(carniExt_value, na.rm = TRUE) - median(nonCarniExt_value, na.rm = TRUE)
+sigboxplot(dframe = dfTriloEx, extinction_var = "mass_extinction", title = "Extinction Rates in and out of Mass Extinctions (Excluding Trilobites)", filename = "mass_extinction_box_ex_trilo.png")
 
-carniNoExt_value = df_triloEx[df_triloEx$me_no_perm == FALSE & df_triloEx$diet == "Carnivore", ]$extPC
-nonCarniNoExt_value = df_triloEx[df_triloEx$me_no_perm == FALSE & df_triloEx$diet == "Non-Carnivore", ]$extPC
+# Cephalopods
+sigboxplot(dfCephaEx, "mass_extinction", "Extinction Rates in and out of Mass Extinctions (Excluding Cephalopods)", "mass_extinction_box_ex_ceph.png")
+# yes, cephalopods account for most of the impact
 
-nonExtTest = wilcox.test(carniNoExt_value, nonCarniNoExt_value, alternative =
-                           "two.sided")
-nonExtTest
-non_ext_pvalue = nonExtTest[3]$p.value
-
-set.seed(42)
-p = ggplot(df_triloEx[df_triloEx$diet != "Both",], aes(x = diet, y = extPC, colour = me_no_perm)) +
-  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = me_no_perm, stroke = 0.5),
-              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
-  geom_signif(
-    y_position = 1.55,
-    step_increase = 0.1,
-    xmin = 0.8,
-    xmax = 1.8,
-    annotation = paste0("*** (p=", signif(non_ext_pvalue, digits = 2) , ")")
-  ) +
-  geom_signif(
-    y_position = 1.4,
-    step_increase = 0.1,
-    xmin = 1.2,
-    xmax = 2.2,
-    annotation = paste0("NS (p=", signif(ext_pvalue, digits = 2), ")")
-  ) +
-  scale_color_manual(values = c("black", massextinctionCol)) +
-  theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"),
-        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())  +
-  labs(
-    title = "Extinction Rates in and out of Mass Extinctions (Cephalopods countes as Non-Carnivore)",
-    x = "Diet",
-    y = "Per Capita Extinction Rate",
-    color = "Mass Extinction"
-  )
-p
-ggsave("mass_extinction_box_ex_ceph.png", plot = p, bg = "transparent", units="px", width = 1500, height = 1400)
-
-
-
-
+############ earlier tests ####################
+#### Check if end permian throws us off #####
+sigboxplot(df, "me_no_perm", "Extinction Rates in and out of Mass Extinctions (Excluding Permian)", "mass_extinction_box_ex_perm.png")
 ##### Permutation testing #######
 
 n_iter = 10000
@@ -559,7 +403,7 @@ for (i in 1:n_iter) {
   noncarni_sub <- noncarni_sub[sample(nrow(noncarni_sub), n_min), ]
   df_sub = rbind(carni_sub, noncarni_sub)
 
-  test_result <- wilcox.test(extPC ~ diet, data = df_sub, alternative="two.sided")
+  test_result <- wilcox.test(extPC ~ diet, data = df_sub, alternative="greater")
   p_values[i] <- test_result$p.value
 }
 
@@ -607,8 +451,8 @@ ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", widt
 
 
 #### food shortage #####
-food_ext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, alternative = "two.sided")[3]$p.value
-food_nonext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == FALSE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == FALSE, ]$extPC, alternative = "two.sided")[3]$p.value
+food_ext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, alternative = "greater")[3]$p.value
+food_nonext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == FALSE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == FALSE, ]$extPC, alternative = "greater")[3]$p.value
 
 p = ggplot(df[df$diet != "Both", ], aes(x = diet, y = extPC, colour = food_mass_extinction)) +
   geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
@@ -656,7 +500,7 @@ for (i in 1:n_iter) {
   noncarni_sub <- noncarni_sub[sample(nrow(noncarni_sub), n_min), ]
   df_sub = rbind(carni_sub, noncarni_sub)
   
-  test_result <- wilcox.test(extPC ~ diet, data = df_sub, alternative="two.sided")
+  test_result <- wilcox.test(extPC ~ diet, data = df_sub, alternative="greater")
   food_p_values[i] <- test_result$p.value
 }
 
