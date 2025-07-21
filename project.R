@@ -408,7 +408,7 @@ sigboxplot(dfCephaEx, "mass_extinction", "Extinction Rates in and out of Mass Ex
 
 ############ earlier tests ####################
 #### Check if end permian throws us off #####
-sigboxplot(df, "me_no_perm", "Extinction Rates in and out of Mass Extinctions (Excluding Permian)", "mass_extinction_box_ex_perm.png")
+sigboxplot(df, "me_no_perm", "Extinction Rates in and out of Mass Extinctions",subtitle="Changhsingian not counted as mass extinction", "mass_extinction_box_ex_perm.png")
 ##### Permutation testing #######
 
 n_iter = 10000
@@ -438,7 +438,7 @@ sigboxplot(df, extinction_var = "mass_extinction", title="Extinction rates of Ca
 
 
 #### food shortage #####
-sigboxplot(df, extinction_var = "food_mass_extinction", title="Extinction rates of Carnivores and Non-Carnivores",filename = "food_mass_extinction_box.png")
+sigboxplot(df, extinction_var = "food_mass_extinction", title="Extinction rates of Carnivores and Non-Carnivores",subtitle= "Changhsingian and Rhaetian not counted as mass extinctions",filename = "food_mass_extinction_box.png")
 
 
 food_p_values <- numeric(n_iter)
