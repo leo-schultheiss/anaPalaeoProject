@@ -11,10 +11,10 @@ carnivores$group = "carnivore"
 nonCarnivores$group = "non-carnivore"
 grouped_df = rbind(carnivores, nonCarnivores)
 
-accentCol = "#D1CCF0"
-carniCol = "#EB4E46"
-nonCarniCol = "black"
-massextinctionCol = "#345EEB"
+accentCol = "#c594c5"
+carniCol = "#ec5f67"
+nonCarniCol = "#1b2b34"
+massextinctionCol = "#6699cc"
 
 ##### display carnivore types #####
 
@@ -82,7 +82,7 @@ full_tsplot <- function(x = NULL,
                         ylim = c(0, 1),
                         ylab = "Diversity Proportion",
                         boxes = "sys",
-                        shading = "sys",
+                        shading = NULL,
                         event_lines = df[df$diet == "Both" & df$mass_extinction == TRUE,]$mid,
                         leg = TRUE,
                         legend_pos = "topright",
@@ -108,7 +108,7 @@ full_tsplot <- function(x = NULL,
   
   # Add vertical event lines
   abline(v = event_lines,
-         col = "gray20",
+         col = massextinctionCol,
          lty = 2, lwd=2)
   
   # add horizontal line
@@ -177,7 +177,7 @@ prop_tsplot = function(proportion, tit = "Relative Makeup of Diets", sub= NA, in
     legend = c("Carnivore", "Non-Carnivore")
   }
     
-  abline(v = c(66, 201, 252, 372, 445), col = "white")
+  #abline(v = c(66, 201, 252, 372, 445), col = massextinctionCol)
   legend(
     "topright",
     bg = "white",
@@ -302,8 +302,20 @@ save_plot("difference_extinction_highlight.png", plot_wdth = 1000)
 
 ###### Analyzing extinction rates ########
 #check normality
-qqnorm(df[df$diet=="Both",]$extPC)
-qqline(df[df$diet=="Both",]$extPC)
+q = ggplot(df[df$diet=="Both",], aes(sample=extPC)) + 
+  stat_qq() +
+  geom_qq_line() + 
+  theme(panel.background = element_rect(fill = "transparent"),
+        plot.background = element_rect(fill = "transparent"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(
+    title = "QQ plot of Per Capita Extinction Rates",
+    x = "Theoretical",
+    y = "Sampled"
+  )
+q
+ggsave("qqextinction_rate.png", plot = q, bg = "transparent", units="px", width = 1100, height = 900)
 shapiro.test(df[df$diet=="Both",]$extPC)
 ks.test(df[df$diet == "Both", ]$extPC, 'pnorm')
 # > not normally distributed
@@ -416,85 +428,17 @@ for (i in 1:n_iter) {
 
 # Summary of results
 summary(p_values)
-hist(p_values, main = "P-value distribution from subsampling")
+hist(p_values, main = "P-value distribution from subsampling", )
 length(p_values[p_values < 0.05])
 p_lower_bound = quantile(p_values, probs=c(0.025))
 p_upper_bound = quantile(p_values, probs=c(0.975))
 
-p = ggplot(df[df$diet != "Both",], aes(x = diet, y = extPC, colour = mass_extinction)) +
-  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = mass_extinction, stroke = 1),
-              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
-  geom_signif(
-    map_signif_level = TRUE,
-    y_position = 1.5,
-    step_increase = 0.1,
-    xmin = 0.8,
-    xmax = 1.8,
-    annotation = paste0("NS (bootstrapped, ", signif(p_lower_bound, digits = 3) ,"=<p<=", signif(p_upper_bound, digits = 3) , ", 95% CI)")
-  ) +
-  geom_signif(
-    y_position = 1.35,
-    step_increase = 0.1,
-    xmin = 1.2,
-    xmax = 2.2,
-    annotation = paste0("NS (p=", signif(ext_pvalue, digits = 3), ")")
-  ) +
-  scale_color_manual(values = c("black",massextinctionCol)) +
-  theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"),
-        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())  +
-  labs(
-    title = "Extinction rates of Carnivores and Non-Carnivores, Subsampled",
-    x = "Diet",
-    y = "Second-for-Third Corrected Extinction Rate",
-    color = "Mass Extinction"
-  )
-p
-ggsave("mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1100, height = 900)
+
+sigboxplot(df, extinction_var = "mass_extinction", title="Extinction rates of Carnivores and Non-Carnivores",subtitle= "Subsampled", filename = "mass_extinction_box_subsampled.png")
 
 
 #### food shortage #####
-food_ext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == TRUE, ]$extPC, alternative = "greater")[3]$p.value
-food_nonext_pvalue = wilcox.test(df[df$diet == "Carnivore" & df$food_mass_extinction == FALSE, ]$extPC, df[df$diet == "Non-Carnivore" & df$food_mass_extinction == FALSE, ]$extPC, alternative = "greater")[3]$p.value
-
-p = ggplot(df[df$diet != "Both", ], aes(x = diet, y = extPC, colour = food_mass_extinction)) +
-  geom_boxplot(position = position_dodge(0.8), outlier.shape = NA) +
-  geom_jitter(aes(color = food_mass_extinction, stroke = 1),
-              position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8)) +
-  geom_signif(
-    map_signif_level = TRUE,
-    y_position = 1.5,
-    step_increase = 0.1,
-    xmin = 0.8,
-    xmax = 1.8,
-    annotation = paste0("NS (Wilcox, p=", signif(food_nonext_pvalue, digits = 3) , ", 95% CI)")
-  ) +
-  geom_signif(
-    y_position = 1.4,
-    step_increase = 0.1,
-    xmin = 1.2,
-    xmax = 2.2,
-    annotation = paste0("NS (Wilcox, p=", signif(food_ext_pvalue, digits = 3), ")")
-  ) +
-  scale_color_manual(values = c("black",massextinctionCol)) +
-  theme(panel.background = element_rect(fill = "transparent"),
-        plot.background = element_rect(fill = "transparent"),
-        legend.background = element_rect(fill = "transparent"),  # Transparent legend background
-        legend.box.background = element_rect(fill = "transparent"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())  +  
-  labs(
-    title = "Extinction rates of Carnivores and Non-Carnivores, Subsampled",
-    x = "Diet",
-    y = "Raw per Capita Extinction Rate",
-    color = "Food Mass Extinction"
-  )
-p
-ggsave("food_mass_extinction_box.png", plot = p, bg = "transparent", units="px", width = 1100, height = 900)
+sigboxplot(df, extinction_var = "food_mass_extinction", title="Extinction rates of Carnivores and Non-Carnivores",filename = "food_mass_extinction_box.png")
 
 
 food_p_values <- numeric(n_iter)
